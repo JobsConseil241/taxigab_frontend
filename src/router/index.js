@@ -2,13 +2,21 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 const routes = [
   {
+    path: '/',
+    component: () => import('../layouts/VitrineLayout.vue'),
+    meta: { public: true },
+    children: [
+      { path: '', name: 'Vitrine', component: () => import('../views/vitrine/LandingPage.vue') },
+    ],
+  },
+  {
     path: '/login',
     name: 'Login',
     component: () => import('../views/LoginView.vue'),
     meta: { guest: true },
   },
   {
-    path: '/',
+    path: '/dashboard',
     component: () => import('../layouts/AdminLayout.vue'),
     meta: { auth: true },
     children: [
@@ -24,9 +32,14 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+  scrollBehavior(to) {
+    if (to.hash) return { el: to.hash, behavior: 'smooth' }
+    return { top: 0 }
+  },
 })
 
 router.beforeEach((to) => {
+  if (to.matched.some(r => r.meta.public)) return
   const token = localStorage.getItem('taxigab_admin_token')
   if (to.meta.auth && !token) return { name: 'Login' }
   if (to.meta.guest && token) return { name: 'Dashboard' }

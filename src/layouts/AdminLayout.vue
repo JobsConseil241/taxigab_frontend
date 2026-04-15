@@ -9,15 +9,15 @@ const route = useRoute()
 const sidebarOpen = ref(false)
 
 const nav = [
-  { name: 'Tableau de bord', to: '/', icon: 'chart' },
-  { name: 'Courses', to: '/rides', icon: 'car' },
-  { name: 'Chauffeurs', to: '/drivers', icon: 'users' },
-  { name: 'Utilisateurs', to: '/users', icon: 'user' },
-  { name: 'Formules', to: '/formulas', icon: 'tag' },
+  { name: 'Tableau de bord', to: '/dashboard', icon: 'chart' },
+  { name: 'Courses', to: '/dashboard/rides', icon: 'car' },
+  { name: 'Chauffeurs', to: '/dashboard/drivers', icon: 'users' },
+  { name: 'Utilisateurs', to: '/dashboard/users', icon: 'user' },
+  { name: 'Formules', to: '/dashboard/formulas', icon: 'tag' },
 ]
 
 function isActive(path) {
-  if (path === '/') return route.path === '/'
+  if (path === '/dashboard') return route.path === '/dashboard'
   return route.path.startsWith(path)
 }
 

@@ -13,7 +13,7 @@ async function submit() {
   try {
     await auth.login(email.value, password.value)
     await auth.fetchMe()
-    router.push('/')
+    router.push('/dashboard')
   } catch {
     // error is in store
   }
@@ -100,7 +100,7 @@ async function submit() {
         </button>
       </form>
 
-      <p class="text-center text-xs text-gray-400 mt-6">Taxi Gab &copy; 2026 — MRTECH</p>
+      <p class="text-center text-xs text-gray-400 mt-6">Taxi Gab &copy; 2026</p>
     </div>
   </div>
 </template>
