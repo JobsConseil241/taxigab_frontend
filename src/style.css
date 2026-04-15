@@ -1,0 +1,13 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+@theme {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --color-brand-orange: #FA6414;
+  --color-brand-orange-dark: #C84018;
+  --color-brand-purple: #37286B;
+}
+
+body {
+  font-family: var(--font-sans);
+}
