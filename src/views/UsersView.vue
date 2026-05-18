@@ -1,11 +1,28 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import api from '../services/api'
 import EmptyState from '../components/EmptyState.vue'
+import SideDrawer from '../components/SideDrawer.vue'
 
+const route = useRoute()
 const users = ref([])
 const loading = ref(true)
-const search = ref('')
+const search = ref((route.query.q ?? '').toString())
+const selectedUser = ref(null)
+
+function formatLongDate(val) {
+  if (!val) return '—'
+  return new Date(val).toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
+watch(() => route.query.q, (q) => {
+  if (q !== undefined) search.value = (q ?? '').toString()
+})
 
 async function fetchUsers() {
   loading.value = true
@@ -102,7 +119,8 @@ function formatDate(val) {
             <tr
               v-for="user in filtered"
               :key="user.id"
-              class="border-t border-brand-line hover:bg-brand-line-2/40 transition-colors"
+              class="border-t border-brand-line hover:bg-brand-line-2/40 transition-colors cursor-pointer"
+              @click="selectedUser = user"
             >
               <td class="px-5 py-3">
                 <div class="flex items-center gap-3">
@@ -156,5 +174,100 @@ function formatDate(val) {
         </table>
       </div>
     </div>
+
+    <!-- User detail drawer -->
+    <SideDrawer
+      :open="!!selectedUser"
+      :title="selectedUser?.name || 'Utilisateur'"
+      subtitle="FICHE UTILISATEUR"
+      width="max-w-md"
+      @close="selectedUser = null"
+    >
+      <template v-if="selectedUser">
+        <div class="relative bg-brand-navy text-white p-6 overflow-hidden">
+          <div class="absolute -top-12 -right-12 w-44 h-44 rounded-full bg-brand-yellow/10 pointer-events-none" />
+          <div class="relative flex items-center gap-4">
+            <div class="w-16 h-16 rounded-full bg-brand-yellow flex items-center justify-center text-brand-navy font-extrabold text-2xl shrink-0">
+              {{ selectedUser.name?.charAt(0)?.toUpperCase() || '?' }}
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-[11px] font-extrabold tracking-[0.12em] text-white/55">
+                #{{ selectedUser.id }} · {{ (selectedUser.role || 'user').toUpperCase() }}
+              </p>
+              <h3 class="text-2xl font-extrabold truncate">{{ selectedUser.name }}</h3>
+              <p class="text-sm text-white/70 tg-mono truncate">
+                {{ selectedUser.phone || '—' }}
+              </p>
+            </div>
+          </div>
+
+          <div class="mt-5 grid grid-cols-2 gap-3">
+            <div>
+              <p class="text-[10px] font-extrabold tracking-[0.1em] text-white/50">RÔLE</p>
+              <p class="font-extrabold mt-1 text-sm">
+                <span
+                  :class="[
+                    'inline-block px-2 py-0.5 rounded-md',
+                    roleColor[selectedUser.role] || 'bg-white/10',
+                  ]"
+                >
+                  {{ roleLabel[selectedUser.role] || selectedUser.role }}
+                </span>
+              </p>
+            </div>
+            <div>
+              <p class="text-[10px] font-extrabold tracking-[0.1em] text-white/50">STATUT</p>
+              <p class="text-xs font-extrabold mt-1 flex items-center gap-1.5">
+                <span
+                  :class="[
+                    'w-2 h-2 rounded-full',
+                    selectedUser.is_active ? 'bg-brand-success' : 'bg-white/30',
+                  ]"
+                />
+                {{ selectedUser.is_active ? 'ACTIF' : 'INACTIF' }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-6 space-y-5">
+          <div>
+            <p class="text-[11px] font-extrabold tracking-[0.1em] text-brand-muted mb-2">CONTACT</p>
+            <div class="bg-brand-surface-bg rounded-2xl p-4 space-y-2 text-sm">
+              <p>
+                <span class="text-brand-muted">Email :</span>
+                <span class="tg-mono ml-1">{{ selectedUser.email }}</span>
+              </p>
+              <p>
+                <span class="text-brand-muted">Téléphone :</span>
+                <span class="tg-mono ml-1">{{ selectedUser.phone || '—' }}</span>
+              </p>
+              <p>
+                <span class="text-brand-muted">Langue :</span>
+                <span class="font-bold ml-1">{{ (selectedUser.language || 'fr').toUpperCase() }}</span>
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <p class="text-[11px] font-extrabold tracking-[0.1em] text-brand-muted mb-2">COMPTE</p>
+            <div class="bg-brand-surface-bg rounded-2xl p-4 space-y-2 text-sm">
+              <p>
+                <span class="text-brand-muted">Inscrit le :</span>
+                <span class="font-bold ml-1">{{ formatLongDate(selectedUser.created_at) }}</span>
+              </p>
+              <p v-if="selectedUser.email_verified_at">
+                <span class="text-brand-muted">Email vérifié :</span>
+                <span class="font-bold ml-1 text-brand-success">✓ {{ formatLongDate(selectedUser.email_verified_at) }}</span>
+              </p>
+              <p v-else>
+                <span class="text-brand-muted">Email vérifié :</span>
+                <span class="font-bold ml-1 text-brand-muted">— non vérifié</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </template>
+    </SideDrawer>
   </div>
 </template>
