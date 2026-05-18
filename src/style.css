@@ -84,3 +84,10 @@ body {
 /* Hide scrollbar utility */
 .tg-scroll { scrollbar-width: none; }
 .tg-scroll::-webkit-scrollbar { display: none; }
+
+/* Leaflet cab marker — pulse halo behind the top-down car SVG */
+@keyframes tg-cab-pulse {
+  0%, 100% { transform: scale(0.85); opacity: 0.5; }
+  50%      { transform: scale(1.15); opacity: 0.2; }
+}
+.tg-cab-marker { background: transparent !important; border: none !important; }
