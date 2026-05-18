@@ -86,25 +86,25 @@ const advantages = [
     <!-- Background pattern -->
     <div class="absolute inset-0 opacity-[0.04]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 40px 40px;" />
     <!-- Orange glow -->
-    <div class="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-brand-orange/10 blur-3xl" />
+    <div class="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-brand-yellow/10 blur-3xl" />
 
     <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 lg:py-0 w-full">
       <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
         <!-- Text -->
         <div>
-          <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-orange/15 text-brand-orange text-xs font-semibold tracking-wide uppercase mb-6">
-            <span class="w-1.5 h-1.5 rounded-full bg-brand-orange" />
+          <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-yellow/15 text-brand-yellow-dim text-xs font-semibold tracking-wide uppercase mb-6">
+            <span class="w-1.5 h-1.5 rounded-full bg-brand-yellow" />
             Disponible à Moanda
           </span>
           <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-[1.1] tracking-tight">
             Votre taxi à<br>
-            <span class="text-brand-orange">Moanda</span>, en un clic
+            <span class="text-brand-yellow-dim">Moanda</span>, en un clic
           </h1>
           <p class="mt-5 text-lg text-white/60 max-w-lg leading-relaxed">
             Commandez un VTC en quelques secondes. Suivez votre chauffeur en temps réel et payez simplement.
           </p>
           <div class="mt-8 flex flex-wrap gap-4">
-            <a href="#telecharger" class="inline-flex items-center gap-2 px-6 py-3.5 bg-brand-orange hover:bg-brand-orange-dark text-white font-semibold rounded-xl transition-colors shadow-lg shadow-brand-orange/25">
+            <a href="#telecharger" class="inline-flex items-center gap-2 px-6 py-3.5 bg-brand-yellow hover:brightness-95 text-brand-navy font-semibold rounded-xl transition-colors shadow-lg shadow-brand-yellow/40">
               Commander une course
               <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
@@ -135,7 +135,7 @@ const advantages = [
         <div class="hidden lg:flex justify-center">
           <div class="relative">
             <!-- Phone frame -->
-            <div class="w-[280px] h-[560px] rounded-[3rem] border-[6px] border-white/10 bg-brand-purple/80 backdrop-blur shadow-2xl flex flex-col items-center overflow-hidden">
+            <div class="w-[280px] h-[560px] rounded-[3rem] border-[6px] border-white/10 bg-brand-navy/80 backdrop-blur shadow-2xl flex flex-col items-center overflow-hidden">
               <!-- Status bar -->
               <div class="w-full px-6 pt-4 pb-2 flex items-center justify-between">
                 <span class="text-[10px] text-white/60 font-medium">9:41</span>
@@ -151,7 +151,7 @@ const advantages = [
                 <div class="text-white/50 text-xs mb-4">Où allez-vous ?</div>
                 <!-- Search bar -->
                 <div class="bg-white/10 rounded-xl px-3 py-2.5 flex items-center gap-2 mb-4">
-                  <svg class="w-4 h-4 text-brand-orange" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <svg class="w-4 h-4 text-brand-yellow-dim" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
                   </svg>
                   <span class="text-xs text-white/40">Rechercher une destination...</span>
@@ -161,23 +161,23 @@ const advantages = [
                   <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(circle at 1px 1px, white 0.5px, transparent 0); background-size: 20px 20px;" />
                   <!-- Pin -->
                   <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-full">
-                    <div class="w-6 h-6 bg-brand-orange rounded-full border-2 border-white shadow-lg flex items-center justify-center">
+                    <div class="w-6 h-6 bg-brand-yellow rounded-full border-2 border-white shadow-lg flex items-center justify-center">
                       <div class="w-2 h-2 bg-white rounded-full" />
                     </div>
-                    <div class="w-0.5 h-3 bg-brand-orange mx-auto" />
+                    <div class="w-0.5 h-3 bg-brand-yellow mx-auto" />
                   </div>
                   <!-- Nearby drivers -->
-                  <div class="absolute top-[35%] left-[30%] w-4 h-4 bg-brand-purple rounded-full border border-white/50 flex items-center justify-center">
-                    <svg class="w-2.5 h-2.5 text-brand-orange" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6H7l-4 8h2l1-2h8l1 2h2l-4-8z" /></svg>
+                  <div class="absolute top-[35%] left-[30%] w-4 h-4 bg-brand-navy rounded-full border border-white/50 flex items-center justify-center">
+                    <svg class="w-2.5 h-2.5 text-brand-yellow-dim" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6H7l-4 8h2l1-2h8l1 2h2l-4-8z" /></svg>
                   </div>
-                  <div class="absolute top-[55%] left-[65%] w-4 h-4 bg-brand-purple rounded-full border border-white/50 flex items-center justify-center">
-                    <svg class="w-2.5 h-2.5 text-brand-orange" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6H7l-4 8h2l1-2h8l1 2h2l-4-8z" /></svg>
+                  <div class="absolute top-[55%] left-[65%] w-4 h-4 bg-brand-navy rounded-full border border-white/50 flex items-center justify-center">
+                    <svg class="w-2.5 h-2.5 text-brand-yellow-dim" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6H7l-4 8h2l1-2h8l1 2h2l-4-8z" /></svg>
                   </div>
                 </div>
               </div>
             </div>
             <!-- Glow behind phone -->
-            <div class="absolute -inset-10 bg-brand-orange/5 blur-3xl rounded-full -z-10" />
+            <div class="absolute -inset-10 bg-brand-yellow/5 blur-3xl rounded-full -z-10" />
           </div>
         </div>
       </div>
@@ -196,7 +196,7 @@ const advantages = [
   <section id="fonctionnalites" class="py-20 lg:py-28 bg-white">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="text-center max-w-2xl mx-auto mb-14">
-        <span class="text-sm font-semibold text-brand-orange uppercase tracking-wider">Fonctionnalités</span>
+        <span class="text-sm font-semibold text-brand-yellow-dim uppercase tracking-wider">Fonctionnalités</span>
         <h2 class="mt-3 text-3xl lg:text-4xl font-extrabold text-brand-navy tracking-tight">
           Tout ce qu'il faut pour un trajet parfait
         </h2>
@@ -209,10 +209,10 @@ const advantages = [
         <div
           v-for="f in features"
           :key="f.title"
-          class="group p-6 lg:p-8 rounded-2xl border border-gray-100 hover:border-brand-orange/20 hover:shadow-lg hover:shadow-brand-orange/5 transition-all"
+          class="group p-6 lg:p-8 rounded-2xl border border-gray-100 hover:border-brand-yellow/20 hover:shadow-lg hover:shadow-brand-yellow/10 transition-all"
         >
           <!-- Icon -->
-          <div class="w-12 h-12 rounded-xl bg-brand-orange/10 text-brand-orange flex items-center justify-center mb-5 group-hover:bg-brand-orange group-hover:text-white transition-colors">
+          <div class="w-12 h-12 rounded-xl bg-brand-yellow/10 text-brand-yellow-dim flex items-center justify-center mb-5 group-hover:bg-brand-yellow group-hover:text-brand-navy transition-colors">
             <!-- Bolt -->
             <svg v-if="f.icon === 'bolt'" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
@@ -247,10 +247,10 @@ const advantages = [
   </section>
 
   <!-- ===== SERVICES ===== -->
-  <section id="services" class="py-20 lg:py-28 bg-brand-lavande">
+  <section id="services" class="py-20 lg:py-28 bg-brand-line-2">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="text-center max-w-2xl mx-auto mb-14">
-        <span class="text-sm font-semibold text-brand-orange uppercase tracking-wider">Nos Services</span>
+        <span class="text-sm font-semibold text-brand-yellow-dim uppercase tracking-wider">Nos Services</span>
         <h2 class="mt-3 text-3xl lg:text-4xl font-extrabold text-brand-navy tracking-tight">
           Une formule pour chaque besoin
         </h2>
@@ -265,20 +265,20 @@ const advantages = [
           :key="s.name"
           :class="[
             'relative bg-white rounded-2xl p-8 flex flex-col transition-all',
-            i === 1 ? 'ring-2 ring-brand-orange shadow-xl shadow-brand-orange/10 scale-[1.02]' : 'shadow-sm hover:shadow-lg',
+            i === 1 ? 'ring-2 ring-brand-yellow shadow-xl shadow-brand-yellow/15 scale-[1.02]' : 'shadow-sm hover:shadow-lg',
           ]"
         >
           <!-- Badge -->
           <span
             v-if="s.badge"
-            class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-brand-orange text-white text-xs font-bold rounded-full shadow"
+            class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-brand-yellow text-brand-navy text-xs font-bold rounded-full shadow"
           >{{ s.badge }}</span>
 
           <!-- Service icon -->
           <div
             :class="[
               'w-14 h-14 rounded-2xl flex items-center justify-center mb-6',
-              i === 0 ? 'bg-brand-navy/5 text-brand-navy' : i === 1 ? 'bg-brand-orange/10 text-brand-orange' : 'bg-brand-purple/10 text-brand-purple',
+              i === 0 ? 'bg-brand-navy/5 text-brand-navy' : i === 1 ? 'bg-brand-yellow/10 text-brand-yellow-dim' : 'bg-brand-navy/10 text-brand-navy',
             ]"
           >
             <!-- Standard car -->
@@ -310,7 +310,7 @@ const advantages = [
               :class="[
                 'block w-full text-center py-3 rounded-xl text-sm font-semibold transition-colors',
                 i === 1
-                  ? 'bg-brand-orange text-white hover:bg-brand-orange-dark'
+                  ? 'bg-brand-yellow text-brand-navy hover:bg-brand-yellow-dim'
                   : 'bg-brand-navy/5 text-brand-navy hover:bg-brand-navy/10',
               ]"
             >Choisir</a>
@@ -326,7 +326,7 @@ const advantages = [
       <div class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
         <!-- Text -->
         <div>
-          <span class="text-sm font-semibold text-brand-orange uppercase tracking-wider">Télécharger</span>
+          <span class="text-sm font-semibold text-brand-yellow-dim uppercase tracking-wider">Télécharger</span>
           <h2 class="mt-3 text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
             Téléchargez l'application<br>Taxi Gab
           </h2>
@@ -378,9 +378,9 @@ const advantages = [
         <!-- Phone mockup -->
         <div class="hidden lg:flex justify-center">
           <div class="relative">
-            <div class="w-[260px] h-[520px] rounded-[3rem] border-[6px] border-white/10 bg-gradient-to-b from-brand-purple to-brand-navy shadow-2xl flex flex-col items-center p-6 pt-10">
+            <div class="w-[260px] h-[520px] rounded-[3rem] border-[6px] border-white/10 bg-gradient-to-b from-brand-navy-2 to-brand-navy shadow-2xl flex flex-col items-center p-6 pt-10">
               <div class="w-20 h-1.5 bg-white/20 rounded-full mb-8" />
-              <div class="w-16 h-16 rounded-2xl bg-brand-orange flex items-center justify-center mb-4">
+              <div class="w-16 h-16 rounded-2xl bg-brand-yellow flex items-center justify-center mb-4">
                 <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M13 6H7l-4 8h2l1-2h8l1 2h2l-4-8zm-4.4 5L10 7.5 11.4 11H8.6z" />
                 </svg>
@@ -393,10 +393,10 @@ const advantages = [
                 <div class="h-3 bg-white/10 rounded-full w-5/6" />
               </div>
               <div class="mt-auto w-full">
-                <div class="h-10 bg-brand-orange/30 rounded-xl w-full" />
+                <div class="h-10 bg-brand-yellow/30 rounded-xl w-full" />
               </div>
             </div>
-            <div class="absolute -inset-10 bg-brand-orange/5 blur-3xl rounded-full -z-10" />
+            <div class="absolute -inset-10 bg-brand-yellow/5 blur-3xl rounded-full -z-10" />
           </div>
         </div>
       </div>
@@ -409,7 +409,7 @@ const advantages = [
       <div class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
         <!-- Advantages -->
         <div>
-          <span class="text-sm font-semibold text-brand-orange uppercase tracking-wider">Devenir chauffeur</span>
+          <span class="text-sm font-semibold text-brand-yellow-dim uppercase tracking-wider">Devenir chauffeur</span>
           <h2 class="mt-3 text-3xl lg:text-4xl font-extrabold text-brand-navy tracking-tight">
             Rejoignez la flotte<br>Taxi Gab
           </h2>
@@ -423,7 +423,7 @@ const advantages = [
               :key="a.title"
               class="flex gap-4"
             >
-              <div class="shrink-0 w-10 h-10 rounded-xl bg-brand-orange/10 text-brand-orange flex items-center justify-center">
+              <div class="shrink-0 w-10 h-10 rounded-xl bg-brand-yellow/10 text-brand-yellow-dim flex items-center justify-center">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                 </svg>
@@ -437,7 +437,7 @@ const advantages = [
         </div>
 
         <!-- Form -->
-        <div class="bg-brand-lavande rounded-2xl p-8 lg:p-10">
+        <div class="bg-brand-line-2 rounded-2xl p-8 lg:p-10">
           <h3 class="text-xl font-bold text-brand-navy mb-6">Postuler maintenant</h3>
 
           <div v-if="formSubmitted" class="mb-6 p-4 rounded-xl bg-green-50 border border-green-200">
@@ -457,7 +457,7 @@ const advantages = [
                 type="text"
                 required
                 placeholder="Jean Mouloungui"
-                class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20 outline-none text-sm transition-all"
+                class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-brand-yellow focus:ring-2 focus:ring-brand-yellow/30 outline-none text-sm transition-all"
               >
             </div>
             <div>
@@ -467,7 +467,7 @@ const advantages = [
                 type="tel"
                 required
                 placeholder="+241 XX XX XX XX"
-                class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20 outline-none text-sm transition-all"
+                class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-brand-yellow focus:ring-2 focus:ring-brand-yellow/30 outline-none text-sm transition-all"
               >
             </div>
             <div>
@@ -477,14 +477,14 @@ const advantages = [
                 type="email"
                 required
                 placeholder="jean@email.com"
-                class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20 outline-none text-sm transition-all"
+                class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-brand-yellow focus:ring-2 focus:ring-brand-yellow/30 outline-none text-sm transition-all"
               >
             </div>
             <div>
               <label class="block text-sm font-medium text-brand-navy mb-1.5">Ville</label>
               <select
                 v-model="driverForm.city"
-                class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20 outline-none text-sm transition-all bg-white"
+                class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-brand-yellow focus:ring-2 focus:ring-brand-yellow/30 outline-none text-sm transition-all bg-white"
               >
                 <option value="moanda">Moanda</option>
                 <option value="mounana">Mounana</option>
@@ -493,7 +493,7 @@ const advantages = [
             </div>
             <button
               type="submit"
-              class="w-full py-3 bg-brand-orange hover:bg-brand-orange-dark text-white font-semibold rounded-xl transition-colors shadow-lg shadow-brand-orange/25"
+              class="w-full py-3 bg-brand-yellow hover:brightness-95 text-brand-navy font-semibold rounded-xl transition-colors shadow-lg shadow-brand-yellow/40"
             >
               Postuler
             </button>

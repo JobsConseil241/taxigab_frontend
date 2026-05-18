@@ -1,0 +1,31 @@
+<script setup>
+defineProps({
+  icon: { type: String, default: 'inbox' },
+  title: { type: String, required: true },
+  hint: { type: String, default: '' },
+})
+</script>
+
+<template>
+  <div class="text-center py-14">
+    <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-brand-line-2 mb-4 relative">
+      <!-- Yellow diagonal accent (mirrors mobile splash) -->
+      <span class="absolute top-0 right-0 w-4 h-4 bg-brand-yellow rounded-tr-2xl rounded-bl-md opacity-90" />
+      <svg v-if="icon === 'inbox'" class="w-7 h-7 text-brand-muted" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 012.012 1.244l.256.512a2.25 2.25 0 002.013 1.244h3.218a2.25 2.25 0 002.013-1.244l.256-.512a2.25 2.25 0 012.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 00-2.15-1.588H6.911a2.25 2.25 0 00-2.15 1.588L2.35 13.177a2.25 2.25 0 00-.1.661z"/>
+      </svg>
+      <svg v-else-if="icon === 'car'" class="w-7 h-7 text-brand-muted" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.122-.504 1.122-1.125v-4.5m-16.5 0L5.25 6.75h13.5l2.25 7.5m-16.5 0h16.5"/>
+      </svg>
+      <svg v-else-if="icon === 'users'" class="w-7 h-7 text-brand-muted" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/>
+      </svg>
+      <svg v-else-if="icon === 'tag'" class="w-7 h-7 text-brand-muted" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z"/>
+      </svg>
+    </div>
+    <p class="text-sm font-extrabold text-brand-ink">{{ title }}</p>
+    <p v-if="hint" class="text-xs text-brand-muted mt-1">{{ hint }}</p>
+    <div v-if="$slots.action" class="mt-5"><slot name="action" /></div>
+  </div>
+</template>

@@ -39,8 +39,8 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
         <div class="flex items-center justify-between h-16 lg:h-20">
           <!-- Logo -->
           <button @click="scrollTo('accueil')" class="flex items-center gap-2.5">
-            <div class="w-9 h-9 rounded-lg bg-brand-orange flex items-center justify-center">
-              <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+            <div class="w-9 h-9 rounded-xl bg-brand-yellow flex items-center justify-center">
+              <svg class="w-5 h-5 text-brand-navy" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M13 6H7l-4 8h2l1-2h8l1 2h2l-4-8zm-4.4 5L10 7.5 11.4 11H8.6z" />
               </svg>
             </div>
@@ -49,7 +49,7 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
                 'text-lg font-extrabold tracking-tight transition-colors',
                 scrolled ? 'text-brand-navy' : 'text-white',
               ]"
-            >Taxi Gab</span>
+            >Taxi<span class="text-brand-yellow">Gab</span></span>
           </button>
 
           <!-- Desktop links -->
@@ -59,7 +59,7 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
               :key="s.id"
               @click="scrollTo(s.id)"
               :class="[
-                'text-sm font-medium transition-colors hover:text-brand-orange',
+                'text-sm font-medium transition-colors hover:text-brand-yellow-dim',
                 scrolled ? 'text-brand-navy/70' : 'text-white/80',
               ]"
             >{{ s.label }}</button>
@@ -72,7 +72,7 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
               :class="[
                 'hidden sm:inline-flex items-center px-4 py-2 rounded-lg text-sm font-semibold transition-all',
                 scrolled
-                  ? 'bg-brand-purple text-white hover:bg-brand-navy'
+                  ? 'bg-brand-navy text-white hover:bg-brand-navy'
                   : 'bg-white/15 text-white hover:bg-white/25 backdrop-blur',
               ]"
             >Connexion Admin</router-link>
@@ -109,11 +109,11 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
               v-for="s in sections"
               :key="s.id"
               @click="scrollTo(s.id)"
-              class="block w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-brand-navy hover:bg-brand-lavande transition-colors"
+              class="block w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-brand-navy hover:bg-brand-line-2 transition-colors"
             >{{ s.label }}</button>
             <router-link
               to="/login"
-              class="block w-full text-left px-3 py-2.5 rounded-lg text-sm font-semibold text-brand-orange hover:bg-brand-lavande transition-colors"
+              class="block w-full text-left px-3 py-2.5 rounded-lg text-sm font-semibold text-brand-yellow-dim hover:bg-brand-line-2 transition-colors"
               @click="mobileMenuOpen = false"
             >Connexion Admin</router-link>
           </div>
@@ -133,12 +133,12 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
           <!-- About -->
           <div>
             <div class="flex items-center gap-2.5 mb-4">
-              <div class="w-8 h-8 rounded-lg bg-brand-orange flex items-center justify-center">
-                <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <div class="w-8 h-8 rounded-xl bg-brand-yellow flex items-center justify-center">
+                <svg class="w-4 h-4 text-brand-navy" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M13 6H7l-4 8h2l1-2h8l1 2h2l-4-8zm-4.4 5L10 7.5 11.4 11H8.6z" />
                 </svg>
               </div>
-              <span class="text-lg font-extrabold">Taxi Gab</span>
+              <span class="text-lg font-extrabold">Taxi<span class="text-brand-yellow">Gab</span></span>
             </div>
             <p class="text-sm text-white/60 leading-relaxed">
               La plateforme VTC de référence à Moanda, Mounana et Bakoumba. Voyagez en toute sécurité et simplicité.
@@ -152,7 +152,7 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
               <li v-for="s in sections" :key="s.id">
                 <button
                   @click="scrollTo(s.id)"
-                  class="text-sm text-white/60 hover:text-brand-orange transition-colors"
+                  class="text-sm text-white/60 hover:text-brand-yellow-dim transition-colors"
                 >{{ s.label }}</button>
               </li>
             </ul>
@@ -163,19 +163,19 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
             <h4 class="text-sm font-semibold uppercase tracking-wider text-white/40 mb-4">Contact</h4>
             <ul class="space-y-2.5 text-sm text-white/60">
               <li class="flex items-center gap-2">
-                <svg class="w-4 h-4 text-brand-orange shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <svg class="w-4 h-4 text-brand-yellow-dim shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                 </svg>
                 contact@taxigab.com
               </li>
               <li class="flex items-center gap-2">
-                <svg class="w-4 h-4 text-brand-orange shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <svg class="w-4 h-4 text-brand-yellow-dim shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
                 </svg>
                 +241 XX XX XX XX
               </li>
               <li class="flex items-center gap-2">
-                <svg class="w-4 h-4 text-brand-orange shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <svg class="w-4 h-4 text-brand-yellow-dim shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
                   <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
                 </svg>

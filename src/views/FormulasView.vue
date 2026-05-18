@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '../services/api'
+import EmptyState from '../components/EmptyState.vue'
 
 const formulas = ref([])
 const loading = ref(true)
@@ -88,12 +89,12 @@ onMounted(fetchFormulas)
 <template>
   <div>
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-      <h1 class="text-2xl font-extrabold tracking-tight">Formules tarifaires</h1>
-      <button
-        @click="openCreate"
-        class="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-orange text-white rounded-xl text-sm font-semibold hover:bg-brand-orange-dark transition-colors"
-      >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <div>
+        <h1 class="text-3xl font-extrabold tracking-tight">Formules tarifaires</h1>
+        <p class="text-brand-muted text-sm mt-1">Base, prix par km, minimum, arrondi — par type de course</p>
+      </div>
+      <button @click="openCreate" class="tg-cta">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
         </svg>
         Nouvelle formule
@@ -101,64 +102,77 @@ onMounted(fetchFormulas)
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="bg-white rounded-2xl border">
-      <div v-for="i in 3" :key="i" class="flex items-center gap-4 p-4 border-b last:border-0 animate-pulse">
-        <div class="h-4 bg-gray-200 rounded w-8"></div>
-        <div class="h-4 bg-gray-200 rounded w-32"></div>
-        <div class="h-4 bg-gray-200 rounded w-20 ml-auto"></div>
+    <div v-if="loading" class="bg-white rounded-3xl tg-shadow-sm">
+      <div v-for="i in 3" :key="i" class="flex items-center gap-4 p-4 border-b border-brand-line last:border-0 animate-pulse">
+        <div class="h-4 bg-brand-line rounded w-8"></div>
+        <div class="h-4 bg-brand-line rounded w-32"></div>
+        <div class="h-4 bg-brand-line rounded w-20 ml-auto"></div>
       </div>
     </div>
 
     <!-- Table -->
-    <div v-else class="bg-white rounded-2xl border overflow-hidden">
+    <div v-else class="bg-white rounded-3xl tg-shadow-sm overflow-hidden">
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead>
-            <tr class="bg-gray-50/80 text-left text-gray-500 font-medium">
-              <th class="px-5 py-3">Ordre</th>
-              <th class="px-5 py-3">Nom</th>
-              <th class="px-5 py-3">Slug</th>
-              <th class="px-5 py-3 text-right">Base</th>
-              <th class="px-5 py-3 text-right">/km</th>
-              <th class="px-5 py-3 text-right">Minimum</th>
-              <th class="px-5 py-3 text-center">Actif</th>
-              <th class="px-5 py-3 text-right">Actions</th>
+            <tr class="bg-brand-line-2 text-left text-brand-muted">
+              <th class="px-5 py-3 text-[11px] font-extrabold tracking-[0.1em]">ORDRE</th>
+              <th class="px-5 py-3 text-[11px] font-extrabold tracking-[0.1em]">NOM</th>
+              <th class="px-5 py-3 text-[11px] font-extrabold tracking-[0.1em]">SLUG</th>
+              <th class="px-5 py-3 text-[11px] font-extrabold tracking-[0.1em] text-right">BASE</th>
+              <th class="px-5 py-3 text-[11px] font-extrabold tracking-[0.1em] text-right">/KM</th>
+              <th class="px-5 py-3 text-[11px] font-extrabold tracking-[0.1em] text-right">MINIMUM</th>
+              <th class="px-5 py-3 text-[11px] font-extrabold tracking-[0.1em] text-center">ACTIF</th>
+              <th class="px-5 py-3 text-[11px] font-extrabold tracking-[0.1em] text-right">ACTIONS</th>
             </tr>
           </thead>
           <tbody>
             <tr
               v-for="f in formulas"
               :key="f.id"
-              class="border-t hover:bg-gray-50/50 transition-colors"
+              class="border-t border-brand-line hover:bg-brand-line-2/40 transition-colors"
             >
-              <td class="px-5 py-3 text-gray-400 font-semibold">{{ f.sort_order }}</td>
-              <td class="px-5 py-3 font-semibold">{{ f.name }}</td>
-              <td class="px-5 py-3 text-gray-500 font-mono text-xs">{{ f.slug }}</td>
-              <td class="px-5 py-3 text-right">{{ formatPrice(f.base_fare) }} XAF</td>
-              <td class="px-5 py-3 text-right">{{ formatPrice(f.per_km) }} XAF</td>
-              <td class="px-5 py-3 text-right">{{ formatPrice(f.min_fare) }} XAF</td>
+              <td class="px-5 py-3 tg-mono text-brand-muted font-bold">{{ f.sort_order }}</td>
+              <td class="px-5 py-3 font-extrabold">{{ f.name }}</td>
+              <td class="px-5 py-3 text-brand-muted tg-mono text-xs">{{ f.slug }}</td>
+              <td class="px-5 py-3 text-right tg-mono font-bold whitespace-nowrap">{{ formatPrice(f.base_fare) }} <span class="text-[10px] text-brand-muted">F</span></td>
+              <td class="px-5 py-3 text-right tg-mono font-bold whitespace-nowrap">{{ formatPrice(f.per_km) }} <span class="text-[10px] text-brand-muted">F</span></td>
+              <td class="px-5 py-3 text-right tg-mono font-bold whitespace-nowrap">{{ formatPrice(f.min_fare) }} <span class="text-[10px] text-brand-muted">F</span></td>
               <td class="px-5 py-3 text-center">
                 <span
                   :class="[
                     'inline-block w-2.5 h-2.5 rounded-full',
-                    f.is_active ? 'bg-emerald-500' : 'bg-gray-300',
+                    f.is_active ? 'bg-brand-success ring-4 ring-brand-success/15' : 'bg-brand-line',
                   ]"
                 />
               </td>
               <td class="px-5 py-3 text-right">
                 <button
                   @click="openEdit(f)"
-                  class="text-brand-purple hover:text-brand-orange font-medium mr-3"
+                  class="text-brand-navy hover:text-brand-yellow-dim font-bold mr-3"
                 >Modifier</button>
                 <button
                   @click="destroy(f)"
-                  class="text-red-500 hover:text-red-700 font-medium"
+                  class="text-brand-danger hover:brightness-110 font-bold"
                 >Supprimer</button>
               </td>
             </tr>
             <tr v-if="formulas.length === 0">
-              <td colspan="8" class="px-5 py-12 text-center text-gray-400">
-                Aucune formule tarifaire
+              <td colspan="8" class="p-0">
+                <EmptyState
+                  icon="tag"
+                  title="Aucune formule tarifaire"
+                  hint="Créez votre première formule pour commencer à proposer des courses."
+                >
+                  <template #action>
+                    <button @click="openCreate" class="tg-cta">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                      </svg>
+                      Créer une formule
+                    </button>
+                  </template>
+                </EmptyState>
               </td>
             </tr>
           </tbody>
@@ -177,87 +191,109 @@ onMounted(fetchFormulas)
         leave-to-class="opacity-0"
       >
         <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div class="absolute inset-0 bg-black/40" @click="showModal = false" />
-          <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div class="p-6">
-              <h2 class="text-lg font-bold mb-4">
-                {{ editing ? 'Modifier la formule' : 'Nouvelle formule' }}
-              </h2>
+          <div class="absolute inset-0 bg-brand-navy/50 backdrop-blur-sm" @click="showModal = false" />
+          <div class="relative bg-white rounded-3xl tg-shadow-lg w-full max-w-xl max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between px-6 py-5 border-b border-brand-line">
+              <div>
+                <p class="text-[10px] font-extrabold tracking-[0.14em] text-brand-muted">{{ editing ? 'ÉDITION' : 'CRÉATION' }}</p>
+                <h2 class="text-xl font-extrabold">{{ editing ? 'Modifier la formule' : 'Nouvelle formule' }}</h2>
+              </div>
+              <button
+                @click="showModal = false"
+                class="w-9 h-9 rounded-full bg-brand-line-2 hover:bg-brand-line text-brand-navy flex items-center justify-center"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
 
-              <div class="space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                  <div>
-                    <label class="block text-xs font-medium text-gray-500 mb-1">Nom</label>
-                    <input v-model="form.name" class="w-full px-3 py-2 border rounded-xl text-sm focus:border-brand-orange outline-none" />
-                  </div>
-                  <div>
-                    <label class="block text-xs font-medium text-gray-500 mb-1">Slug</label>
-                    <input v-model="form.slug" class="w-full px-3 py-2 border rounded-xl text-sm focus:border-brand-orange outline-none font-mono" />
-                  </div>
-                </div>
-
+            <div class="p-6 space-y-5">
+              <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs font-medium text-gray-500 mb-1">Description</label>
-                  <input v-model="form.description" class="w-full px-3 py-2 border rounded-xl text-sm focus:border-brand-orange outline-none" />
+                  <label class="block text-[11px] font-extrabold tracking-[0.1em] text-brand-muted mb-1.5">NOM</label>
+                  <input v-model="form.name" class="w-full h-11 px-4 border border-brand-line rounded-xl text-sm font-bold focus:border-brand-yellow focus:ring-2 focus:ring-brand-yellow/30 outline-none transition" />
                 </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                  <div>
-                    <label class="block text-xs font-medium text-gray-500 mb-1">Prise en charge (XAF)</label>
-                    <input v-model.number="form.base_fare" type="number" class="w-full px-3 py-2 border rounded-xl text-sm focus:border-brand-orange outline-none" />
-                  </div>
-                  <div>
-                    <label class="block text-xs font-medium text-gray-500 mb-1">Prix / km (XAF)</label>
-                    <input v-model.number="form.per_km" type="number" class="w-full px-3 py-2 border rounded-xl text-sm focus:border-brand-orange outline-none" />
-                  </div>
-                </div>
-
-                <div class="grid grid-cols-3 gap-4">
-                  <div>
-                    <label class="block text-xs font-medium text-gray-500 mb-1">Minimum (XAF)</label>
-                    <input v-model.number="form.min_fare" type="number" class="w-full px-3 py-2 border rounded-xl text-sm focus:border-brand-orange outline-none" />
-                  </div>
-                  <div>
-                    <label class="block text-xs font-medium text-gray-500 mb-1">Arrondi</label>
-                    <input v-model.number="form.rounding_step" type="number" class="w-full px-3 py-2 border rounded-xl text-sm focus:border-brand-orange outline-none" />
-                  </div>
-                  <div>
-                    <label class="block text-xs font-medium text-gray-500 mb-1">Ordre</label>
-                    <input v-model.number="form.sort_order" type="number" class="w-full px-3 py-2 border rounded-xl text-sm focus:border-brand-orange outline-none" />
-                  </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                  <div>
-                    <label class="block text-xs font-medium text-gray-500 mb-1">Icône</label>
-                    <select v-model="form.icon" class="w-full px-3 py-2 border rounded-xl text-sm focus:border-brand-orange outline-none">
-                      <option value="car">Voiture (standard)</option>
-                      <option value="car_luxury">Voiture (confort)</option>
-                      <option value="star">Étoile (VIP)</option>
-                    </select>
-                  </div>
-                  <div class="flex items-end">
-                    <label class="flex items-center gap-2 cursor-pointer">
-                      <input v-model="form.is_active" type="checkbox" class="w-4 h-4 rounded accent-brand-orange" />
-                      <span class="text-sm font-medium">Formule active</span>
-                    </label>
-                  </div>
+                <div>
+                  <label class="block text-[11px] font-extrabold tracking-[0.1em] text-brand-muted mb-1.5">SLUG</label>
+                  <input v-model="form.slug" class="w-full h-11 px-4 border border-brand-line rounded-xl text-sm font-bold tg-mono focus:border-brand-yellow focus:ring-2 focus:ring-brand-yellow/30 outline-none transition" />
                 </div>
               </div>
 
-              <div class="flex justify-end gap-3 mt-6">
-                <button
-                  @click="showModal = false"
-                  class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700"
-                >Annuler</button>
-                <button
-                  @click="save"
-                  :disabled="saving"
-                  class="px-5 py-2.5 bg-brand-orange text-white rounded-xl text-sm font-semibold hover:bg-brand-orange-dark transition-colors disabled:opacity-50"
-                >
-                  {{ saving ? 'Enregistrement...' : (editing ? 'Mettre à jour' : 'Créer') }}
-                </button>
+              <div>
+                <label class="block text-[11px] font-extrabold tracking-[0.1em] text-brand-muted mb-1.5">DESCRIPTION</label>
+                <input v-model="form.description" class="w-full h-11 px-4 border border-brand-line rounded-xl text-sm focus:border-brand-yellow focus:ring-2 focus:ring-brand-yellow/30 outline-none transition" />
               </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-[11px] font-extrabold tracking-[0.1em] text-brand-muted mb-1.5">PRISE EN CHARGE · FCFA</label>
+                  <input v-model.number="form.base_fare" type="number" class="w-full h-11 px-4 border border-brand-line rounded-xl text-sm tg-mono font-bold focus:border-brand-yellow focus:ring-2 focus:ring-brand-yellow/30 outline-none transition" />
+                </div>
+                <div>
+                  <label class="block text-[11px] font-extrabold tracking-[0.1em] text-brand-muted mb-1.5">PRIX / KM · FCFA</label>
+                  <input v-model.number="form.per_km" type="number" class="w-full h-11 px-4 border border-brand-line rounded-xl text-sm tg-mono font-bold focus:border-brand-yellow focus:ring-2 focus:ring-brand-yellow/30 outline-none transition" />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-3 gap-4">
+                <div>
+                  <label class="block text-[11px] font-extrabold tracking-[0.1em] text-brand-muted mb-1.5">MINIMUM</label>
+                  <input v-model.number="form.min_fare" type="number" class="w-full h-11 px-4 border border-brand-line rounded-xl text-sm tg-mono font-bold focus:border-brand-yellow focus:ring-2 focus:ring-brand-yellow/30 outline-none transition" />
+                </div>
+                <div>
+                  <label class="block text-[11px] font-extrabold tracking-[0.1em] text-brand-muted mb-1.5">ARRONDI</label>
+                  <input v-model.number="form.rounding_step" type="number" class="w-full h-11 px-4 border border-brand-line rounded-xl text-sm tg-mono font-bold focus:border-brand-yellow focus:ring-2 focus:ring-brand-yellow/30 outline-none transition" />
+                </div>
+                <div>
+                  <label class="block text-[11px] font-extrabold tracking-[0.1em] text-brand-muted mb-1.5">ORDRE</label>
+                  <input v-model.number="form.sort_order" type="number" class="w-full h-11 px-4 border border-brand-line rounded-xl text-sm tg-mono font-bold focus:border-brand-yellow focus:ring-2 focus:ring-brand-yellow/30 outline-none transition" />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-[11px] font-extrabold tracking-[0.1em] text-brand-muted mb-1.5">ICÔNE</label>
+                  <select v-model="form.icon" class="w-full h-11 px-4 border border-brand-line rounded-xl text-sm font-bold focus:border-brand-yellow focus:ring-2 focus:ring-brand-yellow/30 outline-none transition">
+                    <option value="car">Voiture (standard)</option>
+                    <option value="car_luxury">Voiture (confort)</option>
+                    <option value="star">Étoile (VIP)</option>
+                  </select>
+                </div>
+                <div class="flex items-end">
+                  <label class="flex items-center gap-3 cursor-pointer h-11">
+                    <span
+                      :class="[
+                        'relative w-11 h-6 rounded-full transition-colors',
+                        form.is_active ? 'bg-brand-success' : 'bg-brand-line',
+                      ]"
+                    >
+                      <span
+                        :class="[
+                          'absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform shadow',
+                          form.is_active ? 'translate-x-5' : '',
+                        ]"
+                      />
+                    </span>
+                    <input v-model="form.is_active" type="checkbox" class="sr-only" />
+                    <span class="text-sm font-bold">Formule active</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex justify-end gap-3 px-6 py-4 border-t border-brand-line bg-brand-surface-bg">
+              <button
+                @click="showModal = false"
+                class="px-5 h-11 text-sm font-bold text-brand-muted hover:text-brand-ink rounded-full"
+              >Annuler</button>
+              <button
+                @click="save"
+                :disabled="saving"
+                class="tg-cta"
+              >
+                {{ saving ? 'Enregistrement…' : (editing ? 'Mettre à jour' : 'Créer la formule') }}
+              </button>
             </div>
           </div>
         </div>
