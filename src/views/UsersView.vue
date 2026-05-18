@@ -27,8 +27,8 @@ watch(() => route.query.q, (q) => {
 async function fetchUsers() {
   loading.value = true
   try {
-    const { data } = await api.get('/admin/users')
-    users.value = data.data || data.users || data || []
+    const { data } = await api.get('/admin/users', { params: { role: 'passenger' } })
+    users.value = data.users || data.data || []
   } catch (e) {
     console.error('Users load failed', e)
   } finally {
@@ -75,8 +75,10 @@ function formatDate(val) {
   <div>
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
       <div>
-        <h1 class="text-3xl font-extrabold tracking-tight">Utilisateurs</h1>
-        <p class="text-brand-muted mt-1 text-sm">Comptes passagers + chauffeurs + admin</p>
+        <h1 class="text-3xl font-extrabold tracking-tight">Passagers</h1>
+        <p class="text-brand-muted mt-1 text-sm">
+          <span class="tg-mono font-bold">{{ users.length }}</span> compte{{ users.length > 1 ? 's' : '' }} client · Moanda, Mounana, Bakoumba
+        </p>
       </div>
       <div class="relative">
         <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-muted" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
@@ -108,9 +110,9 @@ function formatDate(val) {
         <table class="w-full text-sm">
           <thead>
             <tr class="bg-brand-line-2 text-left text-brand-muted">
-              <th class="px-5 py-3 text-[11px] font-extrabold tracking-[0.1em]">UTILISATEUR</th>
+              <th class="px-5 py-3 text-[11px] font-extrabold tracking-[0.1em]">PASSAGER</th>
               <th class="px-5 py-3 text-[11px] font-extrabold tracking-[0.1em]">TÉLÉPHONE</th>
-              <th class="px-5 py-3 text-[11px] font-extrabold tracking-[0.1em]">RÔLE</th>
+              <th class="px-5 py-3 text-[11px] font-extrabold tracking-[0.1em]">COURSES</th>
               <th class="px-5 py-3 text-[11px] font-extrabold tracking-[0.1em]">STATUT</th>
               <th class="px-5 py-3 text-[11px] font-extrabold tracking-[0.1em]">INSCRIT LE</th>
             </tr>
@@ -134,16 +136,7 @@ function formatDate(val) {
                 </div>
               </td>
               <td class="px-5 py-3 tg-mono text-brand-ink-2">{{ user.phone || '—' }}</td>
-              <td class="px-5 py-3">
-                <span
-                  :class="[
-                    'inline-flex px-2.5 py-1 rounded-full text-xs font-bold',
-                    roleColor[user.role] || 'bg-brand-line-2 text-brand-muted',
-                  ]"
-                >
-                  {{ roleLabel[user.role] || user.role }}
-                </span>
-              </td>
+              <td class="px-5 py-3 tg-mono font-extrabold">{{ user.rides_count ?? 0 }}</td>
               <td class="px-5 py-3">
                 <span
                   :class="[
@@ -165,8 +158,8 @@ function formatDate(val) {
               <td colspan="5" class="p-0">
                 <EmptyState
                   icon="users"
-                  :title="search ? 'Aucun résultat' : 'Aucun utilisateur'"
-                  :hint="search ? `Aucun nom, email ou téléphone ne correspond à « ${search} ».` : 'Les comptes apparaîtront ici une fois créés.'"
+                  :title="search ? 'Aucun résultat' : 'Aucun passager'"
+                  :hint="search ? `Aucun nom, email ou téléphone ne correspond à « ${search} ».` : 'Les comptes passagers apparaîtront ici une fois créés.'"
                 />
               </td>
             </tr>

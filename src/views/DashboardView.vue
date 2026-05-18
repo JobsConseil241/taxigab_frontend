@@ -1,21 +1,10 @@
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
-import { Line } from 'vue-chartjs'
-import {
-  Chart as ChartJS,
-  LineElement,
-  PointElement,
-  LinearScale,
-  CategoryScale,
-  Filler,
-  Tooltip,
-} from 'chart.js'
+import { useRouter } from 'vue-router'
 import L from 'leaflet'
 import api from '../services/api'
-import StatusBadge from '../components/StatusBadge.vue'
 
-ChartJS.register(LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip)
-
+const router = useRouter()
 const stats = ref(null)
 const loading = ref(true)
 const recentRides = ref([])
@@ -34,14 +23,12 @@ function initMap() {
   map = L.map(mapContainer.value, { zoomControl: false }).setView(MOANDA_CENTER, 14)
   L.control.zoom({ position: 'topright' }).addTo(map)
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    attribution: '&copy; OpenStreetMap',
     maxZoom: 19,
   }).addTo(map)
   markersLayer = L.layerGroup().addTo(map)
 }
 
-// Top-down taxi silhouette — mirrors the MoandaMap TopDownCar painter.
-// Yellow body, navy windows + wheels, "TAXI" roof sign, white headlights.
 function carIconHtml(headingDeg = 0) {
   return `
     <div style="position:relative; width:48px; height:60px; display:flex; align-items:center; justify-content:center;">
@@ -59,15 +46,10 @@ function carIconHtml(headingDeg = 0) {
         <rect x="7.5" y="-9" width="3" height="5" rx="1" fill="#0A2540"/>
         <rect x="-10.5" y="4" width="3" height="5" rx="1" fill="#0A2540"/>
         <rect x="7.5" y="4" width="3" height="5" rx="1" fill="#0A2540"/>
-        <rect x="-7" y="-14" width="3" height="1.5" rx="0.5" fill="#FFF7C2"/>
-        <rect x="4"  y="-14" width="3" height="1.5" rx="0.5" fill="#FFF7C2"/>
-        <rect x="-7" y="12.5" width="3" height="1.5" rx="0.5" fill="#E04A3C"/>
-        <rect x="4"  y="12.5" width="3" height="1.5" rx="0.5" fill="#E04A3C"/>
         <rect x="-4.5" y="-2" width="9" height="4" rx="1" fill="#0A2540"/>
         <text x="0" y="1.2" text-anchor="middle"
               font-family="'Plus Jakarta Sans', sans-serif"
-              font-size="3.2" font-weight="800" fill="#FFC700"
-              letter-spacing="0.3">TAXI</text>
+              font-size="3.2" font-weight="800" fill="#FFC700">TAXI</text>
       </svg>
     </div>
   `
@@ -87,16 +69,8 @@ async function fetchDriverLocations() {
         html: carIconHtml(heading),
         iconSize: [48, 60],
         iconAnchor: [24, 30],
-        popupAnchor: [0, -28],
       })
-      L.marker([d.current_lat, d.current_lng], { icon })
-        .bindPopup(
-          `<div style="font-family:'Plus Jakarta Sans',sans-serif;">
-            <strong style="font-size:14px;color:#0A2540;">${d.name || 'Chauffeur'}</strong>
-            ${d.plate_number ? `<br><span style="font-family:'JetBrains Mono',monospace;font-size:11px;background:#FFC700;color:#0A2540;padding:2px 6px;border-radius:4px;margin-top:4px;display:inline-block;font-weight:800;">${d.plate_number}</span>` : ''}
-          </div>`,
-        )
-        .addTo(markersLayer)
+      L.marker([d.current_lat, d.current_lng], { icon }).addTo(markersLayer)
     })
   } catch (e) {
     console.error('Failed to fetch driver locations', e)
@@ -107,10 +81,10 @@ onMounted(async () => {
   try {
     const [dashRes, ridesRes] = await Promise.all([
       api.get('/admin/dashboard'),
-      api.get('/admin/rides', { params: { per_page: 5 } }),
+      api.get('/admin/rides', { params: { per_page: 8 } }),
     ])
     stats.value = dashRes.data
-    recentRides.value = ridesRes.data.data || ridesRes.data.rides || []
+    recentRides.value = (ridesRes.data.rides || ridesRes.data.data || []).slice(0, 8)
   } catch (e) {
     console.error('Dashboard load failed', e)
   } finally {
@@ -120,7 +94,13 @@ onMounted(async () => {
   await nextTick()
   initMap()
   fetchDriverLocations()
-  pollTimer = setInterval(fetchDriverLocations, 10_000)
+  pollTimer = setInterval(async () => {
+    fetchDriverLocations()
+    try {
+      const { data } = await api.get('/admin/dashboard')
+      stats.value = data
+    } catch (_) { /* swallow */ }
+  }, 15_000)
 })
 
 onUnmounted(() => {
@@ -132,58 +112,95 @@ function formatPrice(val) {
   return new Intl.NumberFormat('fr-FR').format(val || 0)
 }
 
-// 7-day mini-bars demo data (until backend exposes it).
-const weeklyBars = [18, 22, 31, 25, 35, 42, 23]
-const weeklyDays = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
-const todayIdx = computed(() => new Date().getDay() === 0 ? 6 : new Date().getDay() - 1)
-const maxBar = Math.max(...weeklyBars)
+function compactPrice(val) {
+  const n = val || 0
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(2).replace('.', ',') + ' M'
+  if (n >= 1000) return (n / 1000).toFixed(1).replace('.', ',') + ' k'
+  return n.toString()
+}
 
-const chartData = {
-  labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
-  datasets: [
+function deltaPct(today, yesterday) {
+  if (!yesterday) return today > 0 ? '+100%' : '0%'
+  const v = ((today - yesterday) / yesterday) * 100
+  return (v >= 0 ? '+' : '') + Math.round(v) + '%'
+}
+
+const kpis = computed(() => {
+  const s = stats.value || {}
+  return [
     {
-      label: 'Courses',
-      data: [3, 5, 4, 8, 6, 12, 9],
-      borderColor: '#FFC700',
-      backgroundColor: 'rgba(255, 199, 0, 0.2)',
-      fill: true,
-      tension: 0.4,
-      pointRadius: 4,
-      pointBackgroundColor: '#0A2540',
-      pointBorderColor: '#FFC700',
-      pointBorderWidth: 2,
+      label: 'Courses aujourd\'hui',
+      v: (s.rides_today ?? 0).toString(),
+      d: deltaPct(s.rides_today ?? 0, s.rides_yesterday ?? 0),
+      up: (s.rides_today ?? 0) >= (s.rides_yesterday ?? 0),
+      sub: `vs hier · ${s.rides_yesterday ?? 0}`,
     },
-  ],
+    {
+      label: 'Revenu brut (FCFA)',
+      v: compactPrice(s.revenue_today ?? 0),
+      d: deltaPct(s.revenue_today ?? 0, s.revenue_yesterday ?? 0),
+      up: (s.revenue_today ?? 0) >= (s.revenue_yesterday ?? 0),
+      sub: `commission · ${compactPrice(Math.round((s.revenue_today ?? 0) * 0.15))}`,
+    },
+    {
+      label: 'Chauffeurs en ligne',
+      v: (s.drivers_online ?? 0).toString(),
+      d: `${s.drivers_free ?? 0} libres`,
+      up: true,
+      sub: `sur ${s.total_drivers ?? 0} inscrits`,
+    },
+    {
+      label: 'Note moyenne',
+      v: (s.avg_rating ?? 0).toFixed(2).replace('.', ','),
+      d: 'sur 7 j',
+      up: true,
+      sub: '★ feedback passagers',
+    },
+  ]
+})
+
+const hourly = computed(() => stats.value?.hourly_today ?? Array(24).fill(0))
+const hMax = computed(() => Math.max(1, ...hourly.value))
+
+const alerts = computed(() => {
+  const raw = stats.value?.alerts || []
+  const severities = {
+    urgent: { c: 'text-brand-danger', bg: 'bg-brand-danger', tag: 'URGENT' },
+    warn:   { c: 'text-brand-yellow-dim', bg: 'bg-brand-yellow-dim', tag: 'À TRAITER' },
+    info:   { c: 'text-brand-success', bg: 'bg-brand-success', tag: 'KYC' },
+  }
+  return raw.filter(a => a.count > 0).map(a => ({ ...a, ...severities[a.severity] }))
+})
+
+const todayLabel = computed(() => {
+  const today = new Date()
+  return today.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+})
+
+function statusPill(s) {
+  return {
+    requested: { bg: 'bg-brand-yellow/15', c: 'text-brand-yellow-dim', l: 'EN ATTENTE' },
+    accepted:  { bg: 'bg-blue-100', c: 'text-blue-700', l: 'ACCEPTÉE' },
+    arriving:  { bg: 'bg-blue-100', c: 'text-blue-700', l: 'EN APPROCHE' },
+    in_progress: { bg: 'bg-brand-yellow/15', c: 'text-brand-yellow-dim', l: 'EN COURS' },
+    completed: { bg: 'bg-brand-success/10', c: 'text-brand-success', l: 'TERMINÉE' },
+    cancelled: { bg: 'bg-brand-danger/10', c: 'text-brand-danger', l: 'ANNULÉE' },
+  }[s] || { bg: 'bg-brand-line-2', c: 'text-brand-muted', l: s?.toUpperCase() || '—' }
 }
 
-const chartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: { display: false },
-    tooltip: {
-      backgroundColor: '#0A2540',
-      titleColor: '#FFC700',
-      bodyColor: '#fff',
-      padding: 10,
-      cornerRadius: 12,
-      displayColors: false,
-    },
-  },
-  scales: {
-    y: { beginAtZero: true, grid: { color: '#F0F2F6' }, ticks: { color: '#6B7280' } },
-    x: { grid: { display: false }, ticks: { color: '#6B7280' } },
-  },
+function payDot(method) {
+  return method === 'mobile_money' ? '#E40012' : method === 'cash' ? '#0F9B6D' : '#98A2B3'
+}
+function payLabel(method) {
+  return method === 'mobile_money' ? 'Mobile Money' : method === 'cash' ? 'Espèces' : '—'
 }
 
-// Today date for hero card label
-const todayLabel = computed(() =>
-  new Date().toLocaleDateString('fr-FR', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  }).toUpperCase(),
-)
+function timeStr(iso) {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+}
+
+function goRide(id) { router.push(`/dashboard/rides?id=${id}`) }
 </script>
 
 <template>
@@ -191,251 +208,186 @@ const todayLabel = computed(() =>
     <!-- Page header -->
     <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
       <div>
-        <p class="text-[11px] font-extrabold tracking-[0.12em] text-brand-muted mb-1">TABLEAU DE BORD</p>
-        <h1 class="text-3xl font-extrabold tracking-tight">Activité du jour</h1>
-        <p class="text-brand-muted text-sm mt-1">
-          Moanda · Mounana · Bakoumba
-        </p>
+        <h1 class="text-2xl lg:text-3xl font-extrabold tracking-tight">Bonjour {{ stats?.admin_name || 'Sandra' }} 👋</h1>
+        <p class="text-brand-muted text-sm mt-1 capitalize">Voici ce qui se passe à Moanda · {{ todayLabel }}</p>
       </div>
       <div class="flex items-center gap-2">
-        <span class="inline-flex items-center gap-2 px-3 h-9 rounded-full bg-white border border-brand-line text-xs font-bold text-brand-ink-2">
-          <span class="w-1.5 h-1.5 rounded-full bg-brand-success animate-pulse" />
-          Synchro live · 10s
-        </span>
+        <button class="h-10 px-4 rounded-lg bg-white border border-brand-line font-bold text-sm flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/>
+          </svg>
+          Aujourd'hui ▾
+        </button>
+        <button class="h-10 px-4 rounded-lg bg-brand-navy text-white font-bold text-sm flex items-center gap-2 hover:brightness-110 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+          </svg>
+          Exporter
+        </button>
       </div>
     </div>
 
-    <!-- HERO: Revenue + 7-day bars (mobile earnings style) -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-      <!-- Hero (2 cols) -->
-      <div
-        class="lg:col-span-2 relative overflow-hidden rounded-3xl bg-brand-navy text-white p-6 lg:p-8"
-      >
-        <!-- Decorative circle -->
-        <div class="absolute -top-12 -right-12 w-56 h-56 rounded-full bg-brand-yellow/10 pointer-events-none" />
-        <div class="absolute -bottom-6 right-12 w-24 h-24 rounded-full bg-brand-yellow/5 pointer-events-none" />
+    <!-- KPI grid -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div v-for="(k, i) in kpis" :key="i" class="bg-white rounded-2xl border border-brand-line p-5">
+        <div class="text-[11px] font-extrabold tracking-[0.08em] text-brand-muted">{{ k.label.toUpperCase() }}</div>
+        <div class="flex items-baseline gap-2 mt-2">
+          <div class="tg-mono text-3xl font-extrabold tracking-tight">{{ k.v }}</div>
+          <span :class="[
+            'text-xs font-extrabold px-2 py-0.5 rounded-md',
+            k.up ? 'bg-brand-success/10 text-brand-success' : 'bg-brand-danger/10 text-brand-danger',
+          ]">{{ k.d }}</span>
+        </div>
+        <div class="text-[11px] text-brand-muted mt-1.5">{{ k.sub }}</div>
+      </div>
+    </div>
 
-        <div class="relative flex flex-col h-full">
-          <div class="flex items-start justify-between">
-            <div>
-              <p class="text-[11px] font-extrabold tracking-[0.14em] text-white/55">
-                REVENU · {{ todayLabel }}
-              </p>
-              <div v-if="loading" class="h-12 w-48 mt-2 bg-white/10 rounded animate-pulse"></div>
-              <div v-else class="flex items-baseline gap-2 mt-2">
-                <span class="tg-mono text-5xl lg:text-6xl font-extrabold text-brand-yellow tracking-tight">
-                  {{ formatPrice(stats?.revenue_today) }}
-                </span>
-                <span class="text-white/70 font-bold text-lg">FCFA</span>
-              </div>
-              <p class="text-sm text-white/60 mt-2">
-                <span class="text-brand-yellow font-bold tg-mono">+12%</span>
-                vs hier · <span class="tg-mono font-bold">{{ stats?.rides_today ?? '—' }}</span> courses
-              </p>
-            </div>
-            <div class="hidden sm:flex items-center justify-center w-14 h-14 rounded-2xl bg-brand-yellow text-brand-navy">
-              <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M13 3L4 14h7l-1 7 9-11h-7l1-7z"/>
-              </svg>
+    <!-- Map + 24h activity row -->
+    <div class="grid grid-cols-1 xl:grid-cols-[1.6fr_1fr] gap-4 mb-6">
+      <!-- Live map -->
+      <div class="bg-white rounded-2xl border border-brand-line overflow-hidden relative">
+        <div class="flex items-center justify-between px-5 py-4">
+          <div>
+            <div class="text-base font-extrabold">Activité en direct · Moanda</div>
+            <div class="text-xs text-brand-muted">
+              {{ stats?.rides_active ?? 0 }} courses actives · {{ liveDriverCount }} chauffeurs visibles
             </div>
           </div>
-
-          <!-- 7-day bars -->
-          <div class="mt-6 flex items-end gap-2 h-24">
-            <div v-for="(v, i) in weeklyBars" :key="i" class="flex-1 flex flex-col items-center gap-2">
-              <div class="flex-1 w-full flex items-end">
-                <div
-                  class="w-full rounded-md transition-all"
-                  :style="`height:${(v / maxBar) * 100}%; background:${i === todayIdx ? '#FFC700' : 'rgba(255,255,255,0.28)'}`"
-                />
-              </div>
-              <span
-                :class="[
-                  'text-[10px] font-bold',
-                  i === todayIdx ? 'text-brand-yellow' : 'text-white/40',
-                ]"
-              >{{ weeklyDays[i] }}</span>
+          <div class="flex items-center gap-2">
+            <span class="px-3 h-7 rounded-full bg-brand-navy text-white text-xs font-bold flex items-center">Courses</span>
+            <span class="px-3 h-7 rounded-full bg-brand-line-2 text-brand-ink-2 text-xs font-bold flex items-center">Chauffeurs</span>
+          </div>
+        </div>
+        <div class="relative h-[340px]">
+          <div ref="mapContainer" class="absolute inset-0 z-0"></div>
+          <div class="absolute top-4 right-4 z-[400] bg-brand-navy/95 backdrop-blur rounded-xl px-3.5 py-3 text-white shadow-lg">
+            <div class="text-[10px] font-extrabold tracking-[0.1em] text-white/60">QUARTIER CHAUD</div>
+            <div class="text-base font-extrabold mt-0.5">Centre-ville</div>
+            <div class="text-[11px] text-white/70 mt-0.5">
+              {{ stats?.rides_waiting ?? 0 }} demandes / {{ stats?.drivers_free ?? 0 }} libres ·
+              <span class="text-brand-yellow font-bold">surge actif</span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Live drivers chip card -->
-      <div class="relative rounded-3xl bg-brand-yellow text-brand-navy p-6 overflow-hidden">
-        <div class="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-brand-navy/10 pointer-events-none" />
-        <div class="relative">
-          <p class="text-[11px] font-extrabold tracking-[0.14em] opacity-70">CHAUFFEURS EN LIGNE</p>
-          <div class="mt-2 flex items-baseline gap-2">
-            <span class="tg-mono text-6xl font-extrabold tracking-tight">{{ liveDriverCount }}</span>
-            <span class="text-sm font-bold opacity-70">/ {{ stats?.drivers_total ?? '—' }}</span>
+      <!-- 24h activity -->
+      <div class="bg-white rounded-2xl border border-brand-line p-5">
+        <div class="text-base font-extrabold">Activité sur 24h</div>
+        <div class="text-xs text-brand-muted">Courses par heure · aujourd'hui</div>
+        <div class="flex items-end gap-1 mt-5 h-44">
+          <div v-for="(h, i) in hourly" :key="i" class="flex-1 flex flex-col items-center gap-1">
+            <div class="flex-1 w-full flex items-end">
+              <div
+                class="w-full rounded-sm transition-all"
+                :style="`height:${(h / hMax) * 100}%; background:${h > hMax * 0.7 ? '#FFC700' : '#0A2540'}; opacity:${h > hMax * 0.7 ? 1 : 0.7};`"
+              />
+            </div>
+            <span v-if="i % 4 === 0" class="text-[9px] tg-mono text-brand-muted">{{ String(i).padStart(2, '0') }}h</span>
           </div>
-          <p class="text-sm font-semibold opacity-70 mt-2">disponibles à Moanda</p>
-          <router-link
-            to="/dashboard/vehicles"
-            class="mt-5 inline-flex items-center gap-1 px-4 h-9 rounded-full bg-brand-navy text-white text-xs font-extrabold hover:brightness-110 transition"
-          >
-            Voir la flotte
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-            </svg>
+        </div>
+        <div class="flex gap-4 mt-3 text-[11px] text-brand-muted">
+          <div class="flex items-center gap-1.5"><div class="w-2.5 h-2.5 bg-brand-navy rounded-sm"/>Heures creuses</div>
+          <div class="flex items-center gap-1.5"><div class="w-2.5 h-2.5 bg-brand-yellow rounded-sm"/>Heures de pointe</div>
+        </div>
+        <div class="mt-4 pt-3 border-t border-brand-line space-y-2.5 text-sm">
+          <div class="flex justify-between"><span class="text-brand-muted">Temps d'attente moyen</span><span class="tg-mono font-extrabold">{{ stats?.avg_wait_minutes ?? 0 }} min</span></div>
+          <div class="flex justify-between"><span class="text-brand-muted">Tarif moyen de course</span><span class="tg-mono font-extrabold">{{ formatPrice(stats?.avg_fare) }} F</span></div>
+          <div class="flex justify-between"><span class="text-brand-muted">Annulations</span><span class="tg-mono font-extrabold">{{ stats?.cancellation_rate ?? 0 }}%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent rides + alerts -->
+    <div class="grid grid-cols-1 xl:grid-cols-[2fr_1fr] gap-4">
+      <!-- Recent rides table -->
+      <div class="bg-white rounded-2xl border border-brand-line overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-4">
+          <div>
+            <div class="text-base font-extrabold">Dernières courses</div>
+            <div class="text-xs text-brand-muted">Mises à jour en temps réel</div>
+          </div>
+          <router-link to="/dashboard/rides" class="text-xs font-bold text-brand-navy hover:underline">
+            Tout voir →
           </router-link>
         </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-brand-surface-bg">
+                <th v-for="h in ['ID','Client','Chauffeur','Trajet','Montant','Paiement','Statut','Heure']" :key="h"
+                    class="text-left px-4 py-2.5 text-[11px] font-extrabold text-brand-muted tracking-[0.06em]">{{ h.toUpperCase() }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="loading" v-for="i in 5" :key="`l${i}`" class="border-t border-brand-line">
+                <td colspan="8" class="px-4 py-3"><div class="h-4 bg-brand-line-2 rounded animate-pulse"/></td>
+              </tr>
+              <tr v-else-if="recentRides.length === 0" class="border-t border-brand-line">
+                <td colspan="8" class="px-4 py-10 text-center text-brand-muted text-sm">Aucune course récente</td>
+              </tr>
+              <tr v-else v-for="r in recentRides" :key="r.id"
+                  class="border-t border-brand-line hover:bg-brand-surface-bg/60 cursor-pointer transition-colors"
+                  @click="goRide(r.id)">
+                <td class="px-4 py-3 tg-mono font-bold text-brand-navy">TG-{{ String(r.id).padStart(4, '0') }}</td>
+                <td class="px-4 py-3 truncate max-w-[100px]">{{ r.passenger?.name || '—' }}</td>
+                <td class="px-4 py-3 truncate max-w-[120px]">{{ r.driver?.name || '—' }}</td>
+                <td class="px-4 py-3 text-brand-muted truncate max-w-[200px]">
+                  {{ r.pickup_address || '—' }}
+                  <span class="px-1">→</span>
+                  <b class="text-brand-ink">{{ r.dropoff_address || '—' }}</b>
+                </td>
+                <td class="px-4 py-3 tg-mono font-extrabold whitespace-nowrap">
+                  {{ r.price_final ? `${formatPrice(r.price_final)} F` : '—' }}
+                </td>
+                <td class="px-4 py-3">
+                  <span v-if="r.payment_method" class="inline-flex items-center gap-1.5 text-xs">
+                    <span class="w-2 h-2 rounded-full" :style="`background:${payDot(r.payment_method)}`"/>
+                    {{ payLabel(r.payment_method) }}
+                  </span>
+                  <span v-else class="text-brand-muted">—</span>
+                </td>
+                <td class="px-4 py-3">
+                  <span :class="['px-2.5 py-1 rounded-full text-[10px] font-extrabold', statusPill(r.status).bg, statusPill(r.status).c]">
+                    {{ statusPill(r.status).l }}
+                  </span>
+                </td>
+                <td class="px-4 py-3 tg-mono text-brand-muted">{{ timeStr(r.requested_at) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
 
-    <!-- Mini KPI strip -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <div v-if="loading" v-for="i in 4" :key="`s${i}`" class="bg-white rounded-2xl tg-shadow-sm p-4 h-20 animate-pulse">
-        <div class="h-3 bg-brand-line rounded w-20 mb-2"></div>
-        <div class="h-6 bg-brand-line rounded w-12"></div>
-      </div>
-      <template v-else>
-        <div class="bg-white rounded-2xl tg-shadow-sm p-4">
-          <p class="text-[10px] font-extrabold tracking-[0.1em] text-brand-muted">UTILISATEURS</p>
-          <p class="tg-mono text-2xl font-extrabold mt-1">{{ stats?.total_users ?? 0 }}</p>
-        </div>
-        <div class="bg-white rounded-2xl tg-shadow-sm p-4">
-          <p class="text-[10px] font-extrabold tracking-[0.1em] text-brand-muted">CHAUFFEURS APPROUVÉS</p>
-          <p class="tg-mono text-2xl font-extrabold mt-1">{{ stats?.drivers_total ?? 0 }}</p>
-        </div>
-        <div class="bg-white rounded-2xl tg-shadow-sm p-4">
-          <p class="text-[10px] font-extrabold tracking-[0.1em] text-brand-muted">EN ATTENTE</p>
-          <p class="tg-mono text-2xl font-extrabold mt-1 text-brand-yellow-dim">{{ stats?.drivers_pending ?? 0 }}</p>
-        </div>
-        <div class="bg-white rounded-2xl tg-shadow-sm p-4">
-          <p class="text-[10px] font-extrabold tracking-[0.1em] text-brand-muted">FORMULES ACTIVES</p>
-          <p class="tg-mono text-2xl font-extrabold mt-1">{{ stats?.total_formulas ?? 0 }}</p>
-        </div>
-      </template>
-    </div>
-
-    <!-- Map: online drivers (navy header band) -->
-    <div class="bg-white rounded-3xl tg-shadow-sm overflow-hidden mb-6">
-      <div class="flex items-center justify-between bg-brand-navy px-6 py-4">
-        <div>
-          <p class="text-[11px] font-extrabold tracking-[0.12em] text-white/60">CARTE TEMPS RÉEL</p>
-          <h2 class="text-base font-extrabold text-white">Chauffeurs en ligne</h2>
-        </div>
-        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-yellow text-brand-navy text-xs font-extrabold">
-          <span class="w-2 h-2 rounded-full bg-brand-navy animate-pulse" />
-          LIVE · POLL 10s
-        </span>
-      </div>
-      <div ref="mapContainer" class="h-80 z-0"></div>
-    </div>
-
-    <!-- Chart + Recent + Hotspot -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <!-- Chart -->
-      <div class="lg:col-span-2 bg-white rounded-3xl tg-shadow-sm p-6">
+      <!-- Alerts panel -->
+      <div class="bg-white rounded-2xl border border-brand-line p-5">
         <div class="flex items-center justify-between mb-4">
-          <div>
-            <p class="text-[11px] font-extrabold tracking-[0.12em] text-brand-muted">7 DERNIERS JOURS</p>
-            <h2 class="text-lg font-extrabold">Courses</h2>
-          </div>
-          <div class="hidden sm:flex items-center gap-1 bg-brand-line-2 rounded-full p-1">
-            <button class="px-3 h-7 rounded-full text-xs font-extrabold bg-brand-navy text-white">7 j</button>
-            <button class="px-3 h-7 rounded-full text-xs font-bold text-brand-muted hover:text-brand-ink">30 j</button>
-            <button class="px-3 h-7 rounded-full text-xs font-bold text-brand-muted hover:text-brand-ink">90 j</button>
-          </div>
+          <div class="text-base font-extrabold">Alertes</div>
+          <span class="tg-mono text-[11px] text-brand-muted">{{ alerts.length }} actives</span>
         </div>
-        <div class="h-64">
-          <Line :data="chartData" :options="chartOptions" />
-        </div>
-      </div>
-
-      <!-- Hotspot card (driver-style nudge) -->
-      <div class="bg-brand-navy text-white rounded-3xl tg-shadow-sm p-6 flex flex-col">
-        <p class="text-[11px] font-extrabold tracking-[0.12em] text-white/55">ZONE CHAUDE</p>
-        <h2 class="text-lg font-extrabold mt-1">Demande Mounana</h2>
-
-        <div class="flex items-center gap-3 mt-4 p-3 rounded-2xl bg-white/5">
-          <div class="w-10 h-10 rounded-xl bg-brand-yellow flex items-center justify-center shrink-0">
-            <svg class="w-5 h-5 text-brand-navy" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M13 3L4 14h7l-1 7 9-11h-7l1-7z"/>
+        <div v-if="alerts.length === 0" class="text-center py-10">
+          <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-brand-success/10 mb-3">
+            <svg class="w-6 h-6 text-brand-success" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
             </svg>
           </div>
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-bold">+50% sur les tarifs</p>
-            <p class="text-xs text-white/60">12 min de route · pic actuel</p>
+          <p class="text-sm font-bold">Tout est sous contrôle</p>
+          <p class="text-xs text-brand-muted mt-1">Aucune alerte active</p>
+        </div>
+        <div v-else class="space-y-3">
+          <div v-for="(a, i) in alerts" :key="i" class="flex gap-3 pb-3 border-b border-brand-line last:border-0 last:pb-0">
+            <div :class="['w-1 rounded-full self-stretch shrink-0', a.bg]"/>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-0.5">
+                <div :class="['text-[10px] font-extrabold tracking-[0.08em]', a.c]">{{ a.tag }}</div>
+                <span class="tg-mono text-[11px] font-extrabold ml-auto">{{ a.count }}</span>
+              </div>
+              <div class="text-sm font-extrabold">{{ a.title }}</div>
+              <div class="text-xs text-brand-muted">{{ a.sub }}</div>
+            </div>
           </div>
         </div>
-
-        <div class="grid grid-cols-2 gap-3 mt-4 text-sm">
-          <div>
-            <p class="text-[10px] font-extrabold tracking-[0.1em] text-white/50">PIC HORAIRE</p>
-            <p class="tg-mono font-extrabold mt-1">18 — 20 h</p>
-          </div>
-          <div>
-            <p class="text-[10px] font-extrabold tracking-[0.1em] text-white/50">COURSES / H</p>
-            <p class="tg-mono font-extrabold mt-1">12</p>
-          </div>
-        </div>
-
-        <router-link
-          to="/dashboard/formulas"
-          class="mt-auto pt-5 self-start inline-flex items-center gap-1 text-xs font-bold text-brand-yellow hover:underline"
-        >
-          Ajuster les tarifs
-          <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-          </svg>
-        </router-link>
       </div>
-    </div>
-
-    <!-- Recent rides — full width -->
-    <div class="bg-white rounded-3xl tg-shadow-sm p-6 mt-6">
-      <div class="flex items-center justify-between mb-4">
-        <div>
-          <p class="text-[11px] font-extrabold tracking-[0.12em] text-brand-muted">RÉCENT</p>
-          <h2 class="text-lg font-extrabold">Courses</h2>
-        </div>
-        <router-link
-          to="/dashboard/rides"
-          class="text-xs font-bold text-brand-navy hover:text-brand-yellow-dim"
-        >
-          Tout voir →
-        </router-link>
-      </div>
-
-      <div v-if="loading">
-        <div v-for="i in 4" :key="i" class="flex items-center gap-3 py-3 border-t border-brand-line first:border-t-0 animate-pulse">
-          <div class="w-20 h-5 rounded-full bg-brand-line"></div>
-          <div class="flex-1 h-4 bg-brand-line rounded"></div>
-          <div class="w-16 h-4 bg-brand-line rounded"></div>
-        </div>
-      </div>
-      <div
-        v-else-if="recentRides.length === 0"
-        class="text-center py-10"
-      >
-        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-brand-line-2 mb-3">
-          <svg class="w-7 h-7 text-brand-muted" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.122-.504 1.122-1.125v-4.5m-16.5 0L5.25 6.75h13.5l2.25 7.5m-16.5 0h16.5" />
-          </svg>
-        </div>
-        <p class="text-sm font-bold text-brand-ink">Aucune course pour le moment</p>
-        <p class="text-xs text-brand-muted mt-1">Les nouvelles réservations apparaîtront ici en temps réel.</p>
-      </div>
-      <ul v-else class="divide-y divide-brand-line">
-        <li
-          v-for="ride in recentRides.slice(0, 5)"
-          :key="ride.id"
-          class="flex items-center gap-3 text-sm py-3 first:pt-0 last:pb-0 hover:bg-brand-line-2/40 -mx-2 px-2 rounded-xl transition-colors"
-        >
-          <StatusBadge :status="ride.status" class="shrink-0" />
-          <span class="flex-1 truncate text-brand-ink-2">
-            <span class="font-semibold">{{ ride.pickup_address || 'Départ' }}</span>
-            <span class="text-brand-muted px-1.5">→</span>
-            <span class="font-semibold">{{ ride.dropoff_address || 'Arrivée' }}</span>
-          </span>
-          <span class="tg-mono font-extrabold whitespace-nowrap text-brand-navy">
-            {{ formatPrice(ride.price_final || ride.price_estimated) }}
-            <span class="text-[10px] text-brand-muted ml-0.5">F</span>
-          </span>
-        </li>
-      </ul>
     </div>
   </div>
 </template>

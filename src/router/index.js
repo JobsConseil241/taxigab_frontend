@@ -21,9 +21,12 @@ const routes = [
     meta: { auth: true },
     children: [
       { path: '', name: 'Dashboard', component: () => import('../views/DashboardView.vue') },
+      { path: 'live', name: 'LiveRides', component: () => import('../views/LiveRidesView.vue') },
+      { path: 'revenue', name: 'Revenue', component: () => import('../views/RevenueView.vue') },
       { path: 'rides', name: 'Rides', component: () => import('../views/RidesView.vue') },
       { path: 'drivers', name: 'Drivers', component: () => import('../views/DriversView.vue') },
       { path: 'users', name: 'Users', component: () => import('../views/UsersView.vue') },
+      { path: 'admins', name: 'Admins', component: () => import('../views/AdminsView.vue') },
       { path: 'formulas', name: 'Formulas', component: () => import('../views/FormulasView.vue') },
       { path: 'vehicles', name: 'Vehicles', component: () => import('../views/VehiclesView.vue') },
       { path: 'settings', name: 'Settings', component: () => import('../views/SettingsView.vue') },

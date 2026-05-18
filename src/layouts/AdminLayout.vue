@@ -28,7 +28,10 @@ function runSearch() {
 
 // --- Notifications ----------------------------------------------------------
 const notifsOpen = ref(false)
-const notifs = ref({ drivers_pending: 0, rides_today: 0, drivers_online: 0 })
+const notifs = ref({
+  drivers_pending: 0, rides_today: 0, drivers_online: 0,
+  rides_active: 0, drivers_total: 0, total_users: 0,
+})
 let notifPoller = null
 
 async function fetchNotifs() {
@@ -38,6 +41,9 @@ async function fetchNotifs() {
       drivers_pending: data.drivers_pending ?? 0,
       rides_today: data.rides_today ?? 0,
       drivers_online: data.drivers_online ?? 0,
+      rides_active: data.rides_active ?? 0,
+      drivers_total: data.total_drivers ?? 0,
+      total_users: data.total_users ?? 0,
     }
   } catch {
     // swallow
@@ -73,30 +79,37 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
 })
 
-const navGroups = [
+const navGroups = computed(() => [
   {
     label: 'PILOTAGE',
     items: [
       { name: 'Tableau de bord', to: '/dashboard', icon: 'chart' },
-      { name: 'Courses', to: '/dashboard/rides', icon: 'car', badge: 'live' },
+      { name: 'Courses en direct', to: '/dashboard/live', icon: 'car',
+        count: notifs.value.rides_active || null, badge: 'live' },
+      { name: 'Revenus', to: '/dashboard/revenue', icon: 'wallet' },
     ],
   },
   {
     label: 'GESTION',
     items: [
-      { name: 'Chauffeurs', to: '/dashboard/drivers', icon: 'users' },
+      { name: 'Chauffeurs', to: '/dashboard/drivers', icon: 'users',
+        count: notifs.value.drivers_total || null },
       { name: 'Véhicules', to: '/dashboard/vehicles', icon: 'car' },
-      { name: 'Utilisateurs', to: '/dashboard/users', icon: 'user' },
+      { name: 'Passagers', to: '/dashboard/users', icon: 'user',
+        count: notifs.value.total_users ? (notifs.value.total_users > 999 ? `${Math.round(notifs.value.total_users/1000)}k` : notifs.value.total_users) : null },
       { name: 'Formules', to: '/dashboard/formulas', icon: 'tag' },
+      { name: 'Historique', to: '/dashboard/rides', icon: 'clock' },
     ],
   },
   {
     label: 'SYSTÈME',
     items: [
+      { name: 'Administrateurs', to: '/dashboard/admins', icon: 'shield' },
+      { name: 'Support', to: '/dashboard/settings#support', icon: 'chat' },
       { name: 'Paramètres', to: '/dashboard/settings', icon: 'settings' },
     ],
   },
-]
+])
 
 function isActive(path) {
   if (path === '/dashboard') return route.path === '/dashboard'
@@ -126,15 +139,20 @@ async function logout() {
       ]"
     >
       <!-- Logo -->
-      <div class="flex items-center gap-3 px-6 h-16 border-b border-white/10">
-        <div class="w-9 h-9 rounded-xl bg-brand-yellow flex items-center justify-center">
+      <div class="flex items-center gap-3 px-5 py-5 border-b border-white/10">
+        <div class="w-9 h-9 rounded-xl bg-brand-yellow flex items-center justify-center shrink-0">
           <svg class="w-5 h-5 text-brand-navy" fill="currentColor" viewBox="0 0 20 20">
             <path d="M13 6H7l-4 8h2l1-2h8l1 2h2l-4-8zm-4.4 5L10 7.5 11.4 11H8.6z" />
           </svg>
         </div>
-        <span class="text-lg font-extrabold tracking-tight">
-          Taxi<span class="text-brand-yellow">Gab</span>
-        </span>
+        <div class="min-w-0">
+          <div class="text-lg font-extrabold tracking-tight leading-none">
+            Taxi<span class="text-brand-yellow">Gab</span>
+          </div>
+          <div class="text-[10px] font-extrabold tracking-[0.14em] text-white/45 mt-1">
+            ADMIN · MOANDA
+          </div>
+        </div>
       </div>
 
       <!-- Nav -->
@@ -147,10 +165,10 @@ async function logout() {
               :key="item.to"
               :to="item.to"
               :class="[
-                'group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors',
+                'group flex items-center gap-3 h-10 pr-3 rounded-lg text-sm transition-colors border-l-[3px]',
                 isActive(item.to)
-                  ? 'bg-brand-yellow text-brand-navy'
-                  : 'text-white/70 hover:bg-white/10 hover:text-white',
+                  ? 'bg-brand-yellow/15 text-brand-yellow border-brand-yellow font-extrabold pl-2.5'
+                  : 'text-white/70 hover:bg-white/10 hover:text-white border-transparent font-semibold pl-3',
               ]"
               @click="sidebarOpen = false"
             >
@@ -180,17 +198,42 @@ async function logout() {
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a6.759 6.759 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              <span class="flex-1">{{ item.name }}</span>
+              <!-- Wallet icon -->
+              <svg v-if="item.icon === 'wallet'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3"/>
+              </svg>
+              <!-- Clock icon -->
+              <svg v-if="item.icon === 'clock'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <!-- Chat icon -->
+              <svg v-if="item.icon === 'chat'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 01.778-.332 48.294 48.294 0 005.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"/>
+              </svg>
+              <!-- Shield icon -->
+              <svg v-if="item.icon === 'shield'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z"/>
+              </svg>
+              <span class="flex-1 truncate">{{ item.name }}</span>
+              <span
+                v-if="item.count != null"
+                :class="[
+                  'tg-mono text-[10px] font-extrabold px-1.5 py-0.5 rounded-md',
+                  isActive(item.to)
+                    ? 'bg-brand-yellow text-brand-navy'
+                    : 'bg-white/10 text-white',
+                ]"
+              >{{ item.count }}</span>
               <span
                 v-if="item.badge === 'live'"
                 :class="[
                   'text-[9px] font-extrabold tracking-[0.08em] px-1.5 py-0.5 rounded-md flex items-center gap-1',
                   isActive(item.to)
                     ? 'bg-brand-navy/15 text-brand-navy'
-                    : 'bg-brand-yellow/20 text-brand-yellow',
+                    : 'bg-brand-danger/20 text-brand-danger',
                 ]"
               >
-                <span :class="['w-1 h-1 rounded-full', isActive(item.to) ? 'bg-brand-navy' : 'bg-brand-yellow animate-pulse']" />
+                <span :class="['w-1 h-1 rounded-full animate-pulse', isActive(item.to) ? 'bg-brand-navy' : 'bg-brand-danger']" />
                 LIVE
               </span>
             </router-link>
@@ -198,8 +241,23 @@ async function logout() {
         </div>
       </nav>
 
+      <!-- System status card -->
+      <div class="px-3 mt-auto">
+        <div class="bg-white/[0.06] rounded-xl px-3.5 py-3">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="w-2 h-2 rounded-full bg-brand-success animate-pulse"/>
+            <span class="text-[10px] font-extrabold tracking-[0.1em] text-white/85">SYSTÈME OPÉRATIONNEL</span>
+          </div>
+          <div class="text-[11px] text-white/50 leading-relaxed tg-mono">
+            API · OK<br/>
+            Cartes · OK<br/>
+            Reverb · {{ notifs.drivers_online > 0 ? 'OK' : 'idle' }}
+          </div>
+        </div>
+      </div>
+
       <!-- User footer -->
-      <div class="px-4 py-4 border-t border-white/10">
+      <div class="px-4 py-4 mt-3 border-t border-white/10">
         <div class="flex items-center gap-3 mb-3">
           <div class="w-9 h-9 rounded-full bg-brand-yellow flex items-center justify-center text-brand-navy font-extrabold text-sm">
             {{ auth.user?.name?.charAt(0)?.toUpperCase() || 'A' }}
