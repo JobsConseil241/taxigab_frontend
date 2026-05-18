@@ -40,6 +40,39 @@ function initMap() {
   markersLayer = L.layerGroup().addTo(map)
 }
 
+// Top-down taxi silhouette — mirrors the MoandaMap TopDownCar painter.
+// Yellow body, navy windows + wheels, "TAXI" roof sign, white headlights.
+function carIconHtml(headingDeg = 0) {
+  return `
+    <div style="position:relative; width:48px; height:60px; display:flex; align-items:center; justify-content:center;">
+      <span style="position:absolute; inset:0; margin:auto; width:48px; height:48px; border-radius:50%; background:rgba(255,199,0,.22); animation:tg-cab-pulse 2s ease-in-out infinite;"></span>
+      <svg viewBox="-13 -17 26 34" width="34" height="44"
+           style="transform: rotate(${headingDeg}deg); transform-origin: 50% 50%; position:relative; z-index:1;"
+           xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="1" cy="2" rx="11" ry="16" fill="#0A2540" opacity="0.22"/>
+        <rect x="-9" y="-14" width="18" height="28" rx="5" fill="#FFC700" stroke="#0A2540" stroke-width="1.2"/>
+        <line x1="-9" y1="-6" x2="9" y2="-6" stroke="#0A2540" stroke-width="0.6" opacity="0.35"/>
+        <path d="M-7 -10 L7 -10 L6 -4 L-6 -4 Z" fill="#0A2540" opacity="0.82"/>
+        <path d="M-6 4 L6 4 L7 10 L-7 10 Z" fill="#0A2540" opacity="0.82"/>
+        <rect x="-5" y="-3" width="10" height="6" rx="1.5" fill="#FFC700" stroke="#0A2540" stroke-width="0.5"/>
+        <rect x="-10.5" y="-9" width="3" height="5" rx="1" fill="#0A2540"/>
+        <rect x="7.5" y="-9" width="3" height="5" rx="1" fill="#0A2540"/>
+        <rect x="-10.5" y="4" width="3" height="5" rx="1" fill="#0A2540"/>
+        <rect x="7.5" y="4" width="3" height="5" rx="1" fill="#0A2540"/>
+        <rect x="-7" y="-14" width="3" height="1.5" rx="0.5" fill="#FFF7C2"/>
+        <rect x="4"  y="-14" width="3" height="1.5" rx="0.5" fill="#FFF7C2"/>
+        <rect x="-7" y="12.5" width="3" height="1.5" rx="0.5" fill="#E04A3C"/>
+        <rect x="4"  y="12.5" width="3" height="1.5" rx="0.5" fill="#E04A3C"/>
+        <rect x="-4.5" y="-2" width="9" height="4" rx="1" fill="#0A2540"/>
+        <text x="0" y="1.2" text-anchor="middle"
+              font-family="'Plus Jakarta Sans', sans-serif"
+              font-size="3.2" font-weight="800" fill="#FFC700"
+              letter-spacing="0.3">TAXI</text>
+      </svg>
+    </div>
+  `
+}
+
 async function fetchDriverLocations() {
   try {
     const res = await api.get('/admin/drivers/locations')
@@ -48,14 +81,21 @@ async function fetchDriverLocations() {
     if (!markersLayer) return
     markersLayer.clearLayers()
     drivers.forEach((d) => {
+      const heading = Number(d.heading ?? d.current_heading ?? 0)
       const icon = L.divIcon({
-        className: '',
-        html: `<div style="background:#FFC700;border:2px solid #0A2540;width:14px;height:14px;border-radius:50%;box-shadow:0 0 0 6px rgba(255,199,0,.18);"></div>`,
-        iconSize: [14, 14],
-        iconAnchor: [7, 7],
+        className: 'tg-cab-marker',
+        html: carIconHtml(heading),
+        iconSize: [48, 60],
+        iconAnchor: [24, 30],
+        popupAnchor: [0, -28],
       })
       L.marker([d.current_lat, d.current_lng], { icon })
-        .bindPopup(`<strong>${d.name || 'Chauffeur'}</strong>`)
+        .bindPopup(
+          `<div style="font-family:'Plus Jakarta Sans',sans-serif;">
+            <strong style="font-size:14px;color:#0A2540;">${d.name || 'Chauffeur'}</strong>
+            ${d.plate_number ? `<br><span style="font-family:'JetBrains Mono',monospace;font-size:11px;background:#FFC700;color:#0A2540;padding:2px 6px;border-radius:4px;margin-top:4px;display:inline-block;font-weight:800;">${d.plate_number}</span>` : ''}
+          </div>`,
+        )
         .addTo(markersLayer)
     })
   } catch (e) {
