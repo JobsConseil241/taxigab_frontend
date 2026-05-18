@@ -230,12 +230,15 @@ const todayLabel = computed(() =>
             <span class="text-sm font-bold opacity-70">/ {{ stats?.drivers_total ?? '—' }}</span>
           </div>
           <p class="text-sm font-semibold opacity-70 mt-2">disponibles à Moanda</p>
-          <button class="mt-5 inline-flex items-center gap-1 px-4 h-9 rounded-full bg-brand-navy text-white text-xs font-extrabold">
+          <router-link
+            to="/dashboard/vehicles"
+            class="mt-5 inline-flex items-center gap-1 px-4 h-9 rounded-full bg-brand-navy text-white text-xs font-extrabold hover:brightness-110 transition"
+          >
             Voir la flotte
             <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
             </svg>
-          </button>
+          </router-link>
         </div>
       </div>
     </div>
@@ -329,12 +332,15 @@ const todayLabel = computed(() =>
           </div>
         </div>
 
-        <button class="mt-auto pt-5 self-start inline-flex items-center gap-1 text-xs font-bold text-brand-yellow">
+        <router-link
+          to="/dashboard/formulas"
+          class="mt-auto pt-5 self-start inline-flex items-center gap-1 text-xs font-bold text-brand-yellow hover:underline"
+        >
           Ajuster les tarifs
           <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
           </svg>
-        </button>
+        </router-link>
       </div>
     </div>
 

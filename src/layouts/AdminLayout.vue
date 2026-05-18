@@ -1,12 +1,77 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import api from '../services/api'
 
 const auth = useAuthStore()
 const router = useRouter()
 const route = useRoute()
 const sidebarOpen = ref(false)
+
+// --- Global search ----------------------------------------------------------
+const searchQuery = ref('')
+
+// --- Quick action menu ------------------------------------------------------
+const quickOpen = ref(false)
+function quickGo(path) {
+  quickOpen.value = false
+  router.push(path)
+}
+
+function runSearch() {
+  const q = searchQuery.value.trim()
+  if (!q) return
+  router.push({ path: '/dashboard/users', query: { q } })
+  searchQuery.value = ''
+}
+
+// --- Notifications ----------------------------------------------------------
+const notifsOpen = ref(false)
+const notifs = ref({ drivers_pending: 0, rides_today: 0, drivers_online: 0 })
+let notifPoller = null
+
+async function fetchNotifs() {
+  try {
+    const { data } = await api.get('/admin/dashboard')
+    notifs.value = {
+      drivers_pending: data.drivers_pending ?? 0,
+      rides_today: data.rides_today ?? 0,
+      drivers_online: data.drivers_online ?? 0,
+    }
+  } catch {
+    // swallow
+  }
+}
+
+const notifTotal = computed(
+  () => (notifs.value.drivers_pending || 0) + (notifs.value.rides_today || 0),
+)
+
+function goTo(path) {
+  notifsOpen.value = false
+  router.push(path)
+}
+
+function handleClickOutside(e) {
+  if (notifsOpen.value && !e.target.closest('[data-notif-area]')) {
+    notifsOpen.value = false
+  }
+  if (quickOpen.value && !e.target.closest('[data-quick-area]')) {
+    quickOpen.value = false
+  }
+}
+
+onMounted(() => {
+  fetchNotifs()
+  notifPoller = setInterval(fetchNotifs, 30_000)
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  if (notifPoller) clearInterval(notifPoller)
+  document.removeEventListener('click', handleClickOutside)
+})
 
 const navGroups = [
   {
@@ -20,8 +85,15 @@ const navGroups = [
     label: 'GESTION',
     items: [
       { name: 'Chauffeurs', to: '/dashboard/drivers', icon: 'users' },
+      { name: 'Véhicules', to: '/dashboard/vehicles', icon: 'car' },
       { name: 'Utilisateurs', to: '/dashboard/users', icon: 'user' },
       { name: 'Formules', to: '/dashboard/formulas', icon: 'tag' },
+    ],
+  },
+  {
+    label: 'SYSTÈME',
+    items: [
+      { name: 'Paramètres', to: '/dashboard/settings', icon: 'settings' },
     ],
   },
 ]
@@ -103,6 +175,11 @@ async function logout() {
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z" />
               </svg>
+              <!-- Settings icon -->
+              <svg v-if="item.icon === 'settings'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a6.759 6.759 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
               <span class="flex-1">{{ item.name }}</span>
               <span
                 v-if="item.badge === 'live'"
@@ -149,37 +226,196 @@ async function logout() {
       <!-- Top bar (desktop) -->
       <header class="hidden lg:flex items-center h-16 px-6 lg:px-8 border-b border-brand-line bg-white/80 backdrop-blur sticky top-0 z-20">
         <!-- Global search -->
-        <div class="relative w-80">
+        <form @submit.prevent="runSearch" class="relative w-80">
           <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-muted" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
           </svg>
           <input
+            v-model="searchQuery"
             type="text"
-            placeholder="Rechercher une course, un chauffeur…"
+            placeholder="Rechercher un utilisateur (Enter)…"
             class="w-full h-10 pl-10 pr-10 rounded-full bg-brand-line-2 text-sm font-semibold placeholder:text-brand-muted focus:bg-white focus:ring-2 focus:ring-brand-yellow/30 focus:border-brand-yellow border border-transparent outline-none transition"
           />
-          <kbd class="absolute right-2 top-1/2 -translate-y-1/2 hidden xl:inline-flex items-center px-2 py-0.5 rounded-md border border-brand-line bg-white tg-mono text-[10px] text-brand-muted">⌘K</kbd>
-        </div>
+          <kbd class="absolute right-2 top-1/2 -translate-y-1/2 hidden xl:inline-flex items-center px-2 py-0.5 rounded-md border border-brand-line bg-white tg-mono text-[10px] text-brand-muted">↵</kbd>
+        </form>
 
         <div class="ml-auto flex items-center gap-2">
           <!-- Notifications -->
-          <button class="relative w-10 h-10 rounded-full bg-brand-line-2 hover:bg-brand-line text-brand-navy flex items-center justify-center transition">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
-            </svg>
-            <span class="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-brand-danger text-white text-[10px] font-extrabold flex items-center justify-center ring-2 ring-white">3</span>
-          </button>
+          <div class="relative" data-notif-area>
+            <button
+              @click="notifsOpen = !notifsOpen"
+              class="relative w-10 h-10 rounded-full bg-brand-line-2 hover:bg-brand-line text-brand-navy flex items-center justify-center transition"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+              </svg>
+              <span
+                v-if="notifTotal > 0"
+                class="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-brand-danger text-white text-[10px] font-extrabold flex items-center justify-center ring-2 ring-white"
+              >{{ notifTotal > 99 ? '99+' : notifTotal }}</span>
+            </button>
 
-          <!-- Quick action -->
-          <button class="hidden md:inline-flex items-center gap-2 h-10 px-4 rounded-full bg-brand-navy text-white text-sm font-extrabold hover:brightness-110 transition">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
-            </svg>
-            Action rapide
-          </button>
+            <!-- Dropdown -->
+            <Transition
+              enter-active-class="transition duration-150 ease-out"
+              enter-from-class="opacity-0 -translate-y-1"
+              enter-to-class="opacity-100 translate-y-0"
+              leave-active-class="transition duration-100 ease-in"
+              leave-from-class="opacity-100"
+              leave-to-class="opacity-0"
+            >
+              <div
+                v-if="notifsOpen"
+                class="absolute right-0 mt-2 w-80 bg-white rounded-2xl tg-shadow-lg border border-brand-line overflow-hidden"
+              >
+                <div class="px-4 py-3 bg-brand-navy text-white flex items-center justify-between">
+                  <p class="text-sm font-extrabold">Notifications</p>
+                  <span class="text-[10px] font-bold opacity-70">Live · 30s</span>
+                </div>
+                <div class="divide-y divide-brand-line">
+                  <button
+                    v-if="notifs.drivers_pending > 0"
+                    @click="goTo('/dashboard/drivers')"
+                    class="w-full flex items-center gap-3 px-4 py-3 hover:bg-brand-line-2 text-left"
+                  >
+                    <div class="w-10 h-10 rounded-xl bg-brand-yellow/30 flex items-center justify-center shrink-0">
+                      <svg class="w-5 h-5 text-brand-yellow-dim" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/>
+                      </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-extrabold">
+                        <span class="tg-mono">{{ notifs.drivers_pending }}</span> chauffeur(s) en attente
+                      </p>
+                      <p class="text-xs text-brand-muted">Approuver pour activer leurs courses</p>
+                    </div>
+                  </button>
+                  <button
+                    @click="goTo('/dashboard/rides')"
+                    class="w-full flex items-center gap-3 px-4 py-3 hover:bg-brand-line-2 text-left"
+                  >
+                    <div class="w-10 h-10 rounded-xl bg-brand-success/15 flex items-center justify-center shrink-0">
+                      <svg class="w-5 h-5 text-brand-success" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.122-.504 1.122-1.125v-4.5m-16.5 0L5.25 6.75h13.5l2.25 7.5m-16.5 0h16.5"/>
+                      </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-extrabold">
+                        <span class="tg-mono">{{ notifs.rides_today }}</span> courses aujourd'hui
+                      </p>
+                      <p class="text-xs text-brand-muted">Voir l'historique complet</p>
+                    </div>
+                  </button>
+                  <button
+                    @click="goTo('/dashboard')"
+                    class="w-full flex items-center gap-3 px-4 py-3 hover:bg-brand-line-2 text-left"
+                  >
+                    <div class="w-10 h-10 rounded-xl bg-brand-moov/15 flex items-center justify-center shrink-0">
+                      <svg class="w-5 h-5 text-brand-moov" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/>
+                      </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-extrabold">
+                        <span class="tg-mono">{{ notifs.drivers_online }}</span> chauffeur(s) en ligne
+                      </p>
+                      <p class="text-xs text-brand-muted">Voir le tableau de bord</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </Transition>
+          </div>
+
+          <!-- Quick actions dropdown -->
+          <div class="relative" data-quick-area>
+            <button
+              @click="quickOpen = !quickOpen"
+              class="hidden md:inline-flex items-center gap-2 h-10 px-4 rounded-full bg-brand-navy text-white text-sm font-extrabold hover:brightness-110 transition"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+              </svg>
+              Actions rapides
+              <svg
+                :class="['w-3 h-3 transition-transform', quickOpen ? 'rotate-180' : '']"
+                fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/>
+              </svg>
+            </button>
+
+            <Transition
+              enter-active-class="transition duration-150 ease-out"
+              enter-from-class="opacity-0 -translate-y-1"
+              enter-to-class="opacity-100 translate-y-0"
+              leave-active-class="transition duration-100 ease-in"
+              leave-from-class="opacity-100"
+              leave-to-class="opacity-0"
+            >
+              <div
+                v-if="quickOpen"
+                class="absolute right-0 mt-2 w-72 bg-white rounded-2xl tg-shadow-lg border border-brand-line overflow-hidden"
+              >
+                <div class="px-4 py-3 bg-brand-navy text-white">
+                  <p class="text-xs font-extrabold">Actions rapides</p>
+                </div>
+                <div class="divide-y divide-brand-line">
+                  <button @click="quickGo('/dashboard/formulas')" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-brand-line-2 text-left">
+                    <div class="w-9 h-9 rounded-xl bg-brand-yellow/30 flex items-center justify-center shrink-0 text-brand-navy">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z"/>
+                      </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-extrabold">Nouvelle formule</p>
+                      <p class="text-xs text-brand-muted">Créer un type de course</p>
+                    </div>
+                  </button>
+                  <button @click="quickGo('/dashboard/drivers')" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-brand-line-2 text-left">
+                    <div class="w-9 h-9 rounded-xl bg-brand-success/15 flex items-center justify-center shrink-0 text-brand-success">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+                      </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-extrabold">Approuver chauffeurs</p>
+                      <p class="text-xs text-brand-muted">Comptes en attente</p>
+                    </div>
+                  </button>
+                  <button @click="quickGo('/dashboard/rides')" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-brand-line-2 text-left">
+                    <div class="w-9 h-9 rounded-xl bg-brand-moov/15 flex items-center justify-center shrink-0 text-brand-moov">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.122-.504 1.122-1.125v-4.5m-16.5 0L5.25 6.75h13.5l2.25 7.5m-16.5 0h16.5"/>
+                      </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-extrabold">Voir les courses</p>
+                      <p class="text-xs text-brand-muted">Historique complet</p>
+                    </div>
+                  </button>
+                  <button @click="quickGo('/dashboard/vehicles')" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-brand-line-2 text-left">
+                    <div class="w-9 h-9 rounded-xl bg-brand-yellow flex items-center justify-center shrink-0 text-brand-navy">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.122-.504 1.122-1.125v-4.5m-16.5 0L5.25 6.75h13.5l2.25 7.5m-16.5 0h16.5"/>
+                      </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-extrabold">Flotte véhicules</p>
+                      <p class="text-xs text-brand-muted">Tous les véhicules</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </Transition>
+          </div>
 
           <!-- User chip -->
-          <div class="flex items-center gap-3 pl-3 ml-1 border-l border-brand-line">
+          <router-link
+            to="/dashboard/settings"
+            class="flex items-center gap-3 pl-3 ml-1 border-l border-brand-line hover:opacity-80 transition"
+          >
             <div class="text-right hidden xl:block">
               <p class="text-sm font-extrabold leading-tight">{{ auth.user?.name || 'Admin' }}</p>
               <p class="text-[11px] text-brand-muted leading-tight">Administrateur</p>
@@ -187,7 +423,7 @@ async function logout() {
             <div class="w-10 h-10 rounded-full bg-brand-yellow flex items-center justify-center text-brand-navy font-extrabold text-sm">
               {{ auth.user?.name?.charAt(0)?.toUpperCase() || 'A' }}
             </div>
-          </div>
+          </router-link>
         </div>
       </header>
 
